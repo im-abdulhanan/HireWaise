@@ -29,6 +29,7 @@ export default function JobOverviewPage() {
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function loadJob() {
@@ -77,8 +78,6 @@ export default function JobOverviewPage() {
 
   const requiredReqs = (job.requirements || []).filter((r: any) => r.category === "REQUIRED");
   const preferredReqs = (job.requirements || []).filter((r: any) => r.category === "PREFERRED");
-
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteJob = async () => {
     if (!confirm(`Are you sure you want to permanently delete "${job.title}"? This action cannot be undone.`)) {
