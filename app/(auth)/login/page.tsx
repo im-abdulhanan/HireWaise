@@ -204,14 +204,6 @@ export default function LoginPage() {
               <span>Continue with GitHub</span>
             </button>
           </div>
-
-          {/* Quick Demo Credentials helper */}
-          <div className="mt-6 border-t border-slate-100 pt-4 bg-slate-50 p-3 rounded-lg text-xs text-slate-600">
-            <p className="font-semibold text-slate-800">Demo Recruiter Credentials:</p>
-            <p className="mt-1 font-mono text-[11px] text-slate-700">
-              recruiter@techcorp.io / password123
-            </p>
-          </div>
         </div>
       </div>
     </div>
