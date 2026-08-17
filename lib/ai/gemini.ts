@@ -63,13 +63,15 @@ export async function generateStructuredJSON<T>(params: {
   maxRetries?: number;
   temperature?: number;
 }): Promise<GeminiExecutionResult<T>> {
-  const modelName = params.modelName || "gemini-1.5-flash";
+  const candidateModels = params.modelName
+    ? [params.modelName]
+    : ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-pro"];
+
   const maxRetries = params.maxRetries ?? 2;
   const temperature = params.temperature ?? 0.1;
-
   const client = getGeminiClient();
   const startTime = Date.now();
-  let retryCount = 0;
+
   let lastError: any = null;
 
   const combinedSystemPrompt = `
@@ -80,64 +82,78 @@ ${params.systemPrompt}
 CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema. No conversational filler, no extra text, no markdown formatting outside JSON.
 `.trim();
 
-  const model = client.getGenerativeModel({
-    model: modelName,
-    systemInstruction: combinedSystemPrompt,
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature,
-    },
-    safetySettings: [
-      {
-        category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-      {
-        category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-        threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-      },
-    ],
-  });
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (const modelName of candidateModels) {
+    let retryCount = 0;
     try {
-      const result = await model.generateContent(params.userPrompt);
-      const response = result.response;
-      const text = response.text();
-
-      const parsedJSON = cleanAndParseJSON(text);
-      const validatedData = params.schema.parse(parsedJSON);
-
-      const usageMetadata = response.usageMetadata;
-      const inputTokens = usageMetadata?.promptTokenCount || Math.ceil(params.userPrompt.length / 4);
-      const outputTokens = usageMetadata?.candidatesTokenCount || Math.ceil(text.length / 4);
-      const duration = Date.now() - startTime;
-
-      return {
-        data: validatedData,
-        telemetry: {
-          model: modelName,
-          inputTokens,
-          outputTokens,
-          processingDurationMs: duration,
-          retryCount,
-          estimatedCostUsd: estimateGeminiCost(inputTokens, outputTokens),
+      const model = client.getGenerativeModel({
+        model: modelName,
+        systemInstruction: combinedSystemPrompt,
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature,
         },
-      };
-    } catch (err: any) {
-      lastError = err;
-      retryCount++;
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+          },
+        ],
+      });
 
-      // If it's a Zod parsing error or transient rate limit, retry with backoff
-      if (attempt < maxRetries) {
-        const backoffMs = 1000 * Math.pow(2, attempt);
-        await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const result = await model.generateContent(params.userPrompt);
+          const response = result.response;
+          const text = response.text();
+
+          const parsedJSON = cleanAndParseJSON(text);
+          const validatedData = params.schema.parse(parsedJSON);
+
+          const usageMetadata = response.usageMetadata;
+          const inputTokens =
+            usageMetadata?.promptTokenCount || Math.ceil(params.userPrompt.length / 4);
+          const outputTokens =
+            usageMetadata?.candidatesTokenCount || Math.ceil(text.length / 4);
+          const duration = Date.now() - startTime;
+
+          return {
+            data: validatedData,
+            telemetry: {
+              model: modelName,
+              inputTokens,
+              outputTokens,
+              processingDurationMs: duration,
+              retryCount,
+              estimatedCostUsd: estimateGeminiCost(inputTokens, outputTokens),
+            },
+          };
+        } catch (attemptErr: any) {
+          lastError = attemptErr;
+          retryCount++;
+
+          const msg = attemptErr?.message || "";
+          // If model is not found (404), break immediately to try next candidate model
+          if (msg.includes("404") || msg.includes("not found") || msg.includes("not supported")) {
+            break;
+          }
+
+          if (attempt < maxRetries) {
+            const backoffMs = 1000 * Math.pow(2, attempt);
+            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          }
+        }
       }
+    } catch (modelErr: any) {
+      lastError = modelErr;
     }
   }
 
   throw new Error(
-    `Gemini structured generation failed after ${maxRetries + 1} attempts: ${
+    `Gemini structured generation failed: ${
       lastError?.message || String(lastError)
     }`
   );
