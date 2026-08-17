@@ -188,7 +188,22 @@ export async function DELETE(
       return forbiddenResponse();
     }
 
-    // Soft delete/archive or delete
+    const hardDelete = req.nextUrl.searchParams.get("hardDelete") === "true" || req.nextUrl.searchParams.get("permanent") === "true";
+
+    if (hardDelete) {
+      await Promise.all([
+        Job.findByIdAndDelete(params.id),
+        JobRequirement.deleteMany({ jobId: params.id }),
+        Application.deleteMany({ jobId: params.id }),
+        ScreeningResult.deleteMany({ jobId: params.id }),
+      ]);
+
+      return NextResponse.json({
+        success: true,
+        message: "Job deleted permanently.",
+      });
+    }
+
     job.status = "ARCHIVED";
     await job.save();
 

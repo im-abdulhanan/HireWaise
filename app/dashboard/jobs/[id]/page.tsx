@@ -17,6 +17,7 @@ import {
   Calendar,
   ExternalLink,
   ShieldCheck,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +78,31 @@ export default function JobOverviewPage() {
   const requiredReqs = (job.requirements || []).filter((r: any) => r.category === "REQUIRED");
   const preferredReqs = (job.requirements || []).filter((r: any) => r.category === "PREFERRED");
 
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteJob = async () => {
+    if (!confirm(`Are you sure you want to permanently delete "${job.title}"? This action cannot be undone.`)) {
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/jobs/${job.id}?hardDelete=true`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        router.push("/dashboard/jobs");
+      } else {
+        alert(json.error || "Failed to delete job.");
+      }
+    } catch (err) {
+      console.error("Delete job error:", err);
+      alert("Failed to delete job.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
       {/* Header */}
@@ -124,6 +150,18 @@ export default function JobOverviewPage() {
               Candidates ({job.applicationsCount || 0})
             </Button>
           </Link>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isDeleting}
+            onClick={handleDeleteJob}
+            className="gap-1.5 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+            title="Delete Job"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+          </Button>
         </div>
       </div>
 
