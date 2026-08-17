@@ -27,16 +27,37 @@ export async function GET(
 
     await connectToDatabase();
 
+    const jobId = req.nextUrl.searchParams.get("jobId");
+
     // The id parameter could be an Application ID or a Candidate ID
     let application = null;
     if (Types.ObjectId.isValid(params.id)) {
-      application = await Application.findById(params.id).lean();
+      // 1. If jobId is explicitly provided, look for application matching candidateId and jobId
+      if (jobId && Types.ObjectId.isValid(jobId)) {
+        application = await Application.findOne({
+          $or: [
+            { _id: params.id, jobId, companyId: tenant.companyId },
+            { candidateId: params.id, jobId, companyId: tenant.companyId },
+          ],
+        }).lean();
+      }
+
+      // 2. If not found yet, check if params.id is direct Application ID
       if (!application) {
-        // Try finding by candidateId
+        application = await Application.findOne({
+          _id: params.id,
+          companyId: tenant.companyId,
+        }).lean();
+      }
+
+      // 3. If not found, look for latest Application by candidateId
+      if (!application) {
         application = await Application.findOne({
           candidateId: params.id,
           companyId: tenant.companyId,
-        }).lean();
+        })
+          .sort({ appliedAt: -1 })
+          .lean();
       }
     }
 

@@ -17,7 +17,10 @@ export default function CandidateDetailPage() {
   useEffect(() => {
     async function loadCandidate() {
       try {
-        const res = await fetch(`/api/candidates/${params.candidateId}`);
+        const url = params.id
+          ? `/api/candidates/${params.candidateId}?jobId=${params.id}`
+          : `/api/candidates/${params.candidateId}`;
+        const res = await fetch(url);
         const json = await res.json();
         if (json.success && json.data) {
           setData(json.data);
@@ -34,7 +37,7 @@ export default function CandidateDetailPage() {
     if (params.candidateId) {
       loadCandidate();
     }
-  }, [params.candidateId]);
+  }, [params.candidateId, params.id]);
 
   if (loading) {
     return (
