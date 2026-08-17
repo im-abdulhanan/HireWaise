@@ -25,7 +25,7 @@ export function getGeminiClient(): GoogleGenerativeAI {
 }
 
 /**
- * Calculates estimated cost for Gemini 1.5 Flash.
+ * Calculates estimated cost for Gemini Flash models.
  * Pricing reference: ~$0.075 / 1M input tokens, ~$0.30 / 1M output tokens.
  */
 function estimateGeminiCost(inputTokens: number, outputTokens: number): number {
@@ -35,20 +35,51 @@ function estimateGeminiCost(inputTokens: number, outputTokens: number): number {
 }
 
 /**
- * Robust JSON cleaner to parse responses from Gemini, stripping any accidental markdown wrappers.
+ * Robust JSON cleaner to parse responses from Gemini, stripping any accidental markdown wrappers,
+ * thought delimiters, or extraneous non-JSON text.
  */
 export function cleanAndParseJSON(rawText: string): any {
   let cleaned = rawText.trim();
 
   // Strip markdown code fences if present
-  if (cleaned.startsWith("```json")) {
-    cleaned = cleaned.replace(/^```json\s*/, "").replace(/\s*```$/, "");
-  } else if (cleaned.startsWith("```")) {
-    cleaned = cleaned.replace(/^```\s*/, "").replace(/\s*```$/, "");
+  if (cleaned.includes("```json")) {
+    const match = cleaned.match(/```json\s*([\s\S]*?)\s*```/);
+    if (match && match[1]) {
+      cleaned = match[1].trim();
+    }
+  } else if (cleaned.includes("```")) {
+    const match = cleaned.match(/```\s*([\s\S]*?)\s*```/);
+    if (match && match[1]) {
+      cleaned = match[1].trim();
+    }
   }
 
-  cleaned = cleaned.trim();
+  // If text starts with non-JSON (e.g. conversational prefix or thinking), find outermost { ... }
+  if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+  }
+
   return JSON.parse(cleaned);
+}
+
+/**
+ * Wraps a promise with a timeout to prevent hanging network requests.
+ */
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  let timeoutHandle: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutHandle = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutHandle);
+  });
 }
 
 /**
@@ -62,13 +93,21 @@ export async function generateStructuredJSON<T>(params: {
   modelName?: string;
   maxRetries?: number;
   temperature?: number;
+  timeoutMs?: number;
 }): Promise<GeminiExecutionResult<T>> {
   const candidateModels = params.modelName
     ? [params.modelName]
-    : ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-1.5-pro", "gemini-pro"];
+    : [
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.6-flash",
+        "gemini-flash-latest",
+        "gemini-flash-lite-latest",
+      ];
 
   const maxRetries = params.maxRetries ?? 2;
   const temperature = params.temperature ?? 0.1;
+  const timeoutMs = params.timeoutMs ?? 30000; // 30 seconds timeout per attempt
   const client = getGeminiClient();
   const startTime = Date.now();
 
@@ -107,6 +146,7 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
           const result = await model.generateContent(params.userPrompt);
+
           const response = result.response;
           const text = response.text();
 
@@ -136,8 +176,13 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
           retryCount++;
 
           const msg = attemptErr?.message || "";
-          // If model is not found (404), break immediately to try next candidate model
-          if (msg.includes("404") || msg.includes("not found") || msg.includes("not supported")) {
+          // If model is not found (404) or no longer available, break to try next model in candidate list
+          if (
+            msg.includes("404") ||
+            msg.includes("not found") ||
+            msg.includes("not supported") ||
+            msg.includes("no longer available")
+          ) {
             break;
           }
 

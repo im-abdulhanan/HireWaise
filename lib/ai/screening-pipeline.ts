@@ -38,20 +38,26 @@ export async function runScreeningPipeline(
   const { applicationId, skipVerificationAi = false } = options;
   const startTime = Date.now();
 
+  console.log(`\n======================================================`);
+  console.log(`[SCREENING PIPELINE] PIPELINE START - Application: ${applicationId}`);
+  console.log(`======================================================`);
+
   let totalInputTokens = 0;
   let totalOutputTokens = 0;
   let retryCount = 0;
-  let modelUsed = "gemini-1.5-flash";
+  let modelUsed = "gemini-3.6-flash";
 
   await connectToDatabase();
 
   const application = await Application.findById(applicationId);
   if (!application) {
+    console.error(`[SCREENING PIPELINE] Error: Application ${applicationId} not found.`);
     throw new Error(`Application ${applicationId} not found.`);
   }
 
   // Update status to PROCESSING
   application.screeningStatus = "PROCESSING";
+  application.screeningError = undefined;
   await application.save();
 
   try {
@@ -65,6 +71,7 @@ export async function runScreeningPipeline(
     if (!resume) throw new Error(`Resume ${application.resumeId} not found.`);
 
     // STAGE 1: Extract Document Text if not already parsed
+    console.log(`[SCREENING PIPELINE] FILE EXTRACTION START`);
     let rawText = resume.parsedText;
     if (!rawText || rawText.trim().length < 20) {
       const storage = getStorageProvider();
@@ -79,8 +86,16 @@ export async function runScreeningPipeline(
       resume.status = "PARSED";
       await resume.save();
     }
+    console.log(
+      `[SCREENING PIPELINE] FILE EXTRACTION COMPLETE - Extracted ${rawText?.length || 0} characters`
+    );
+
+    if (!rawText || rawText.trim().length < 20) {
+      throw new Error("Resume document contains insufficient readable text.");
+    }
 
     // STAGE 2: Gemini Structured Candidate Extraction
+    console.log(`[SCREENING PIPELINE] GEMINI RESUME ANALYSIS START`);
     const extractionResult = await parseResumeWithGemini(rawText);
     const candidateData = extractionResult.data;
 
@@ -88,6 +103,7 @@ export async function runScreeningPipeline(
     totalOutputTokens += extractionResult.telemetry.outputTokens;
     retryCount += extractionResult.telemetry.retryCount;
     modelUsed = extractionResult.telemetry.model;
+    console.log(`[SCREENING PIPELINE] GEMINI RESUME ANALYSIS COMPLETE - Model: ${modelUsed}`);
 
     // Create or update Candidate record
     let candidate = await Candidate.findById(application.candidateId);
@@ -98,10 +114,10 @@ export async function runScreeningPipeline(
       });
     }
 
-    candidate.name = candidateData.candidateName;
-    candidate.email = candidateData.email;
-    candidate.phone = candidateData.phone;
-    candidate.location = candidateData.location;
+    candidate.name = candidateData.candidateName || candidate.name;
+    candidate.email = candidateData.email || candidate.email;
+    candidate.phone = candidateData.phone || candidate.phone;
+    candidate.location = candidateData.location || candidate.location;
     candidate.summary = candidateData.summary;
     candidate.skills = candidateData.skills;
     candidate.normalizedSkills = candidateData.normalizedSkills;
@@ -114,6 +130,10 @@ export async function runScreeningPipeline(
     candidate.highestDegree = candidateData.highestDegree;
     await candidate.save();
 
+    console.log(
+      `[SCREENING PIPELINE] CANDIDATE EXTRACTION COMPLETE - Name: ${candidate.name}, Skills: ${candidate.skills.length}, Exp: ${candidate.totalExperienceYears} yrs`
+    );
+
     // Link candidate back to resume if needed
     if (!resume.candidateId) {
       resume.candidateId = candidate._id as Types.ObjectId;
@@ -121,12 +141,17 @@ export async function runScreeningPipeline(
     }
 
     // STAGE 3: Deterministic Rule Matching
+    console.log(`[SCREENING PIPELINE] MATCHING START - Requirements Count: ${requirements.length}`);
     const deterministicMatch = calculateDeterministicMatch({
       candidate: candidateData,
       requirements,
       scoringWeights: job.scoringWeights,
       screeningPolicy: job.screeningPolicy,
     });
+
+    console.log(
+      `[SCREENING PIPELINE] MATCHING COMPLETE - Score: ${deterministicMatch.overallScore}, Category: ${deterministicMatch.category}`
+    );
 
     let finalEvaluatedRequirements = deterministicMatch.matchedRequirements;
     let finalConfidence = deterministicMatch.confidence;
@@ -135,6 +160,7 @@ export async function runScreeningPipeline(
 
     // STAGE 4: Gemini Evidence Verification (Zero-Hallucination Audit)
     if (!skipVerificationAi && requirements.length > 0) {
+      console.log(`[SCREENING PIPELINE] VERIFICATION START`);
       try {
         const verifyResult = await verifyEvidenceWithGemini({
           resumeRawText: rawText,
@@ -171,8 +197,9 @@ export async function runScreeningPipeline(
           }
           return r;
         });
-      } catch (verifyErr) {
-        console.warn("Evidence verification step warning:", verifyErr);
+        console.log(`[SCREENING PIPELINE] VERIFICATION COMPLETE`);
+      } catch (verifyErr: any) {
+        console.warn(`[SCREENING PIPELINE] Verification step warning (using deterministic evidence):`, verifyErr?.message);
       }
     }
 
@@ -245,10 +272,14 @@ export async function runScreeningPipeline(
       await ScreeningRequirementResult.insertMany(requirementResultDocs);
     }
 
+    console.log(`[SCREENING PIPELINE] SCREENING RESULT SAVED - ResultId: ${screeningResult._id}`);
+
     // Mark Application as COMPLETED
     application.screeningStatus = "COMPLETED";
     application.screeningError = undefined;
     await application.save();
+
+    console.log(`[SCREENING PIPELINE] PIPELINE COMPLETE - Status: COMPLETED in ${processingDurationMs}ms\n`);
 
     return {
       success: true,
@@ -259,16 +290,16 @@ export async function runScreeningPipeline(
       telemetry: screeningResult.aiUsage,
     };
   } catch (error: any) {
-    console.error("Screening pipeline execution failed:", error);
+    console.error(`[SCREENING PIPELINE] PIPELINE FAILED - Application: ${applicationId}, Error:`, error?.message || error);
 
     application.screeningStatus = "FAILED";
-    application.screeningError = error.message || "Screening processing failed.";
+    application.screeningError = error?.message || "Screening processing failed.";
     await application.save();
 
     return {
       success: false,
       applicationId: application._id.toString(),
-      error: error.message || "Failed to process screening pipeline.",
+      error: error?.message || "Failed to process screening pipeline.",
     };
   }
 }

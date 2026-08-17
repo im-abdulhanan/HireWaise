@@ -191,7 +191,11 @@ export default function GlobalCandidatesPage() {
                       </td>
 
                       <td className="px-5 py-4">
-                        {cat === "STRONG_MATCH" ? (
+                        {c.screeningStatus === "FAILED" ? (
+                          <Badge variant="destructive" className="text-[10px]">
+                            Failed
+                          </Badge>
+                        ) : cat === "STRONG_MATCH" ? (
                           <Badge variant="strongMatch" className="text-[10px]">
                             Strong Match
                           </Badge>
