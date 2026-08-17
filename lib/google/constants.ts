@@ -1,0 +1,20 @@
+// 17-Column Professional Google Sheets Header Standard
+export const SCREENING_SHEET_HEADERS: string[] = [
+  "Candidate ID",
+  "Candidate Name",
+  "Email",
+  "Job",
+  "Match Score",
+  "AI Screening Category",
+  "Required Skills Matched",
+  "Required Skills Missing",
+  "Preferred Skills Matched",
+  "Experience",
+  "Education",
+  "Evidence Summary",
+  "Confidence",
+  "Recruiter Status",
+  "Submitted At",
+  "Last Screened At",
+  "Screening Version",
+];
