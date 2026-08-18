@@ -13,8 +13,10 @@ const SCOPES = [
 export function getGoogleOAuthClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const redirectUri =
-    process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/google/callback";
+  let redirectUri = process.env.GOOGLE_SHEETS_REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI;
+  if (!redirectUri || redirectUri.includes("/api/auth/callback/google")) {
+    redirectUri = "http://localhost:3000/api/google/callback";
+  }
 
   if (!clientId || !clientSecret) {
     throw new Error(
