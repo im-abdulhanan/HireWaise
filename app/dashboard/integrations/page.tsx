@@ -90,7 +90,7 @@ export default function IntegrationsPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between opacity-90">
           <div>
             <div className="flex items-center justify-between gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-[#19191a] border border-slate-200">
                 <Zap className="h-6 w-6" />
               </div>
               <Badge variant="outline" className="text-xs">

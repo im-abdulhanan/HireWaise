@@ -45,7 +45,7 @@ export function SecuritySection() {
     <section id="security" className="py-24 bg-slate-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
+          <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
             Enterprise Security & Trust
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">
@@ -64,7 +64,7 @@ export function SecuritySection() {
                 key={idx}
                 className="rounded-2xl border border-slate-800 bg-slate-950 p-6 hover:border-slate-700 transition-colors"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20 mb-4">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-bold text-white mb-2">

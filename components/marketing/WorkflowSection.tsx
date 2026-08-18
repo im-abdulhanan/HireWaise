@@ -46,7 +46,7 @@ export function WorkflowSection() {
     <section id="how-it-works" className="py-24 bg-white border-t border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
             End-to-End Recruitment Workflow
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
@@ -64,7 +64,7 @@ export function WorkflowSection() {
               key={step.num}
               className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 relative hover:bg-white hover:shadow-lg hover:border-slate-300 transition-all group"
             >
-              <span className="text-3xl font-extrabold text-blue-600 font-mono">
+              <span className="text-3xl font-extrabold text-[#19191a] font-mono">
                 {step.num}
               </span>
               <h3 className="text-base font-bold text-slate-900 mt-4 mb-2">
@@ -78,9 +78,9 @@ export function WorkflowSection() {
         </div>
 
         {/* Staged Pipeline Architecture Banner */}
-        <div className="rounded-3xl border border-blue-200 bg-blue-50/50 p-8 sm:p-12">
+        <div className="rounded-3xl border border-slate-300 bg-slate-100/60 p-8 sm:p-12">
           <div className="text-center max-w-2xl mx-auto mb-10">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
               Under the Hood Architecture
             </span>
             <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">
@@ -98,7 +98,7 @@ export function WorkflowSection() {
                 className="rounded-xl border border-white/80 bg-white p-5 shadow-xs"
               >
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-700 font-mono text-xs font-bold">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#19191a] text-white font-mono text-xs font-bold">
                     {idx + 1}
                   </div>
                   <h4 className="text-xs font-bold text-slate-900">{stage.name}</h4>

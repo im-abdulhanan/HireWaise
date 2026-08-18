@@ -302,7 +302,7 @@ export default function GoogleSheetsIntegrationPage() {
                   size="sm"
                   onClick={handleSyncNow}
                   disabled={syncing || creatingSheet || !data?.spreadsheetId}
-                  className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  className="gap-1.5 text-xs bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-sm"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
                   <span>{syncing ? "Syncing Records..." : "Sync Candidates Now"}</span>

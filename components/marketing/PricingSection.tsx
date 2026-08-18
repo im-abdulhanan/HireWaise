@@ -64,7 +64,7 @@ export function PricingSection() {
     <section id="pricing" className="py-24 bg-white border-t border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
             Simple & Transparent Pricing
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
@@ -81,12 +81,12 @@ export function PricingSection() {
               key={tier.name}
               className={`rounded-3xl p-8 flex flex-col justify-between transition-all ${
                 tier.highlight
-                  ? "border-2 border-blue-600 bg-white shadow-xl shadow-blue-500/10 relative"
+                  ? "border-2 border-[#19191a] bg-white shadow-xl relative"
                   : "border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-lg"
               }`}
             >
               {tier.badge && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#19191a] px-3 py-1 text-[11px] font-bold text-white shadow-sm">
                   {tier.badge}
                 </span>
               )}
@@ -107,7 +107,7 @@ export function PricingSection() {
                 <ul className="mt-8 space-y-3">
                   {tier.features.map((feat, idx) => (
                     <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                      <Check className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                      <Check className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5" />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -119,7 +119,7 @@ export function PricingSection() {
                   <Button
                     variant={tier.highlight ? "default" : "outline"}
                     className={`w-full text-xs font-semibold ${
-                      tier.highlight ? "shadow-md shadow-blue-500/20" : ""
+                      tier.highlight ? "bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md" : ""
                     }`}
                   >
                     {tier.cta}

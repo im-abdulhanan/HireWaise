@@ -24,21 +24,21 @@ import { MarketingFooter } from "@/components/marketing/Footer";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-[#19191a] selection:bg-[#19191a] selection:text-white">
       {/* 1. Header & Navigation */}
       <MarketingNavbar />
 
       {/* 2. Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 bg-gradient-to-b from-white via-slate-50/50 to-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-semibold text-blue-700 shadow-xs mb-8">
-            <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3.5 py-1 text-xs font-semibold text-[#19191a] shadow-xs mb-8">
+            <Sparkles className="h-3.5 w-3.5 text-[#19191a]" />
             <span>Autonomous AI Screening & Deterministic Matching SaaS</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight max-w-5xl mx-auto leading-[1.1]">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#19191a] tracking-tight max-w-5xl mx-auto leading-[1.1]">
             Screen Candidates Faster With{" "}
-            <span className="text-blue-600">AI-Powered</span> Resume Matching
+            <span className="text-[#19191a] underline decoration-neutral-300 underline-offset-8">AI-Powered</span> Resume Matching
           </h1>
 
           <p className="mt-6 max-w-3xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
@@ -48,14 +48,14 @@ export default function HomePage() {
           {/* CTAs */}
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="gap-2 shadow-lg shadow-blue-500/25 px-8 py-3 text-sm font-bold">
+              <Button size="lg" className="gap-2 bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md px-8 py-3 text-sm font-bold">
                 <span>Start Screening Free</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
 
             <a href="#interactive-demo">
-              <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-white">
+              <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-white text-[#19191a] hover:bg-slate-100">
                 Inspect AI Evidence Demo
               </Button>
             </a>
@@ -112,7 +112,7 @@ export default function HomePage() {
             </div>
 
             <div className="lg:col-span-6 rounded-3xl border border-slate-200 bg-slate-50 p-8 shadow-xs space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
                 The ScreenAI Solution
               </span>
               <h3 className="text-xl font-bold text-slate-900">
@@ -179,7 +179,7 @@ export default function HomePage() {
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
                   <span>Col 5-6: Match Score (94/100), AI Category</span>
-                  <span className="text-blue-600 font-bold">Evaluated</span>
+                  <span className="text-[#19191a] font-bold">Evaluated</span>
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
                   <span>Col 7-9: Matched Skills, Missing, Preferred</span>

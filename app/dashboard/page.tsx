@@ -121,7 +121,7 @@ export default function DashboardOverviewPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Active Jobs
             </p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-[#19191a]">
               <Briefcase className="h-4 w-4" />
             </div>
           </div>
@@ -136,7 +136,7 @@ export default function DashboardOverviewPage() {
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Total Applications
             </p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-[#19191a]">
               <Users className="h-4 w-4" />
             </div>
           </div>
@@ -180,7 +180,7 @@ export default function DashboardOverviewPage() {
       {/* Empty State when no jobs exist */}
       {hasNoJobs ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 shadow-inner mb-4">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-[#19191a] shadow-inner mb-4">
             <Briefcase className="h-7 w-7" />
           </div>
           <h3 className="text-lg font-bold text-slate-900">No Jobs Created Yet</h3>
@@ -202,7 +202,7 @@ export default function DashboardOverviewPage() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-slate-900">Recent Applications</h3>
-              <Link href="/dashboard/candidates" className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+              <Link href="/dashboard/candidates" className="text-xs font-semibold text-[#19191a] hover:underline flex items-center gap-1">
                 View all <ArrowRight className="h-3 w-3" />
               </Link>
             </div>
@@ -262,7 +262,7 @@ export default function DashboardOverviewPage() {
                           </td>
                           <td className="px-4 py-3.5 text-right">
                             <Link href={`/dashboard/jobs/${app.jobId || app.job?._id}/candidates/${app.candidateId || app.candidate?._id || app.id}`}>
-                              <Button size="sm" variant="ghost" className="h-7 text-xs text-blue-600">
+                              <Button size="sm" variant="ghost" className="h-7 text-xs text-[#19191a] hover:text-black">
                                 Review
                               </Button>
                             </Link>
@@ -280,7 +280,7 @@ export default function DashboardOverviewPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-slate-900">Active Jobs</h3>
-              <Link href="/dashboard/jobs" className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              <Link href="/dashboard/jobs" className="text-xs font-semibold text-[#19191a] hover:underline">
                 View Studio
               </Link>
             </div>
@@ -295,7 +295,7 @@ export default function DashboardOverviewPage() {
                     <div>
                       <Link
                         href={`/dashboard/jobs/${job.id || job._id}`}
-                        className="text-sm font-semibold text-slate-900 hover:text-blue-600 transition-colors line-clamp-1"
+                        className="text-sm font-semibold text-slate-900 hover:text-[#19191a] transition-colors line-clamp-1"
                       >
                         {job.title}
                       </Link>
@@ -314,7 +314,7 @@ export default function DashboardOverviewPage() {
                     </span>
                     <Link
                       href={`/dashboard/jobs/${job.id || job._id}/candidates`}
-                      className="text-blue-600 font-semibold hover:underline"
+                      className="text-[#19191a] font-semibold hover:underline"
                     >
                       View list →
                     </Link>

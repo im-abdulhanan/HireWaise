@@ -130,7 +130,7 @@ export function InteractiveDemo() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-400" />
+            <Sparkles className="h-5 w-5 text-white" />
             <h3 className="text-lg font-bold text-white tracking-tight">
               Live AI Evidence & Deterministic Matching Visualizer
             </h3>
@@ -156,7 +156,7 @@ export function InteractiveDemo() {
               onClick={() => setSelectedCandidate(cand)}
               className={`rounded-2xl p-4 text-left transition-all border ${
                 isSelected
-                  ? "border-blue-500 bg-slate-800 shadow-lg shadow-blue-500/10"
+                  ? "border-white bg-slate-800 shadow-lg"
                   : "border-slate-800 bg-slate-900/60 hover:bg-slate-800/60"
               }`}
             >
@@ -240,7 +240,7 @@ export function InteractiveDemo() {
 
                 {item.quote && (
                   <div className="rounded-lg bg-slate-950 p-2.5 border border-slate-800/80 italic text-slate-300 font-serif">
-                    <Quote className="h-3 w-3 inline text-blue-400 mr-1 rotate-180" />
+                    <Quote className="h-3 w-3 inline text-slate-400 mr-1 rotate-180" />
                     "{item.quote}"
                   </div>
                 )}

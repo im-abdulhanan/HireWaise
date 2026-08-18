@@ -50,11 +50,11 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
         {/* Workspace Brand Header */}
         <div className="flex h-16 items-center justify-between border-b border-slate-200 px-6">
           <Link href="/dashboard" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-500/30">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#19191a] text-white shadow-sm">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <span className="font-bold text-slate-900 tracking-tight text-base">ScreenAI</span>
+              <span className="font-bold text-[#19191a] tracking-tight text-base">ScreenAI</span>
               <span className="block text-xs font-medium text-slate-500 truncate max-w-[130px]">
                 {companyName}
               </span>
@@ -90,14 +90,14 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
                   className={cn(
                     "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-blue-50 text-blue-700 shadow-xs font-semibold"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "bg-slate-100 text-[#19191a] shadow-xs font-semibold"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-[#19191a]"
                   )}
                 >
                   <item.icon
                     className={cn(
                       "h-4 w-4 transition-colors",
-                      isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
+                      isActive ? "text-[#19191a]" : "text-slate-400 group-hover:text-[#19191a]"
                     )}
                   />
                   {item.name}

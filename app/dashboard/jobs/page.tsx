@@ -82,7 +82,7 @@ export default function JobsListPage() {
               onClick={() => setStatusFilter(status)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                 statusFilter === status
-                  ? "bg-blue-600 text-white shadow-xs"
+                  ? "bg-[#19191a] text-white shadow-xs"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
               }`}
             >

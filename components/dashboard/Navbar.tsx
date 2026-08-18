@@ -47,7 +47,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white ring-2 ring-slate-100 hover:ring-blue-500 transition-all"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#19191a] text-xs font-semibold text-white ring-2 ring-slate-100 hover:ring-[#19191a] transition-all"
           >
             {initial}
           </button>

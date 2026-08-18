@@ -101,7 +101,7 @@ export function EvidenceCard({
               <span
                 className={`text-[10px] font-semibold uppercase tracking-wider ${
                   category === "REQUIRED"
-                    ? "text-blue-700 font-bold"
+                    ? "text-[#19191a] font-bold"
                     : "text-slate-500"
                 }`}
               >
@@ -129,7 +129,7 @@ export function EvidenceCard({
       {evidenceQuote && (
         <div className="mt-3.5 rounded-lg border border-slate-200/80 bg-white p-3 shadow-xs">
           <div className="flex items-start gap-2">
-            <Quote className="h-4 w-4 text-blue-500 shrink-0 mt-0.5 rotate-180" />
+            <Quote className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5 rotate-180" />
             <p className="text-xs italic text-slate-700 leading-relaxed font-serif">
               "{evidenceQuote}"
             </p>

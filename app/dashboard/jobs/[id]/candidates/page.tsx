@@ -179,7 +179,7 @@ export default function JobCandidatesPage() {
                       <td className="px-5 py-4">
                         <Link
                           href={`/dashboard/jobs/${params.id}/candidates/${c.candidateId || c.id}`}
-                          className="font-bold text-slate-900 hover:text-blue-600 transition-colors text-sm"
+                          className="font-bold text-slate-900 hover:text-[#19191a] transition-colors text-sm"
                         >
                           {c.name}
                         </Link>
@@ -253,7 +253,7 @@ export default function JobCandidatesPage() {
                         <Link
                           href={`/dashboard/jobs/${params.id}/candidates/${c.candidateId || c.id}`}
                         >
-                          <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs text-blue-600">
+                          <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs text-[#19191a] hover:text-black">
                             <span>Evidence</span>
                             <ChevronRight className="h-3.5 w-3.5" />
                           </Button>

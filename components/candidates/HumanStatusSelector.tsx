@@ -34,9 +34,9 @@ const STATUS_CONFIG: Record<
   },
   INTERVIEWING: {
     label: "Interviewing",
-    bg: "bg-blue-100",
-    text: "text-blue-800",
-    border: "border-blue-300",
+    bg: "bg-slate-200",
+    text: "text-slate-900",
+    border: "border-slate-400",
   },
   REJECTED: {
     label: "Rejected",
@@ -142,7 +142,7 @@ export function HumanStatusSelector({
                       />
                       {cfg.label}
                     </span>
-                    {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                    {isSelected && <Check className="h-3.5 w-3.5 text-[#19191a]" />}
                   </button>
                 );
               }

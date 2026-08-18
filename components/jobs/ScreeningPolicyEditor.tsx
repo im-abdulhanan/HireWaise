@@ -44,7 +44,7 @@ export function ScreeningPolicyEditor({
       {/* Policy Rules Section */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex items-center gap-2.5 mb-1">
-          <ShieldAlert className="h-5 w-5 text-blue-600" />
+          <ShieldAlert className="h-5 w-5 text-[#19191a]" />
           <h4 className="text-sm font-semibold text-slate-900">Deterministic Screening Rules</h4>
         </div>
         <p className="text-xs text-slate-500 mb-6">
@@ -57,7 +57,7 @@ export function ScreeningPolicyEditor({
               type="checkbox"
               checked={policy.requiredSkillsMustMatch}
               onChange={() => handleToggle("requiredSkillsMustMatch")}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#19191a] focus:ring-[#19191a]"
             />
             <div>
               <p className="text-sm font-medium text-slate-800">
@@ -74,7 +74,7 @@ export function ScreeningPolicyEditor({
               type="checkbox"
               checked={policy.minimumExperienceMustMatch}
               onChange={() => handleToggle("minimumExperienceMustMatch")}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#19191a] focus:ring-[#19191a]"
             />
             <div>
               <p className="text-sm font-medium text-slate-800">
@@ -91,7 +91,7 @@ export function ScreeningPolicyEditor({
               type="checkbox"
               checked={policy.educationRequired}
               onChange={() => handleToggle("educationRequired")}
-              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#19191a] focus:ring-[#19191a]"
             />
             <div>
               <p className="text-sm font-medium text-slate-800">
@@ -128,7 +128,7 @@ export function ScreeningPolicyEditor({
                     humanReviewBelowScore: Number(e.target.value),
                   })
                 }
-                className="w-32 accent-blue-600 cursor-pointer"
+                className="w-32 accent-[#19191a] cursor-pointer"
               />
               <span className="flex h-9 w-14 items-center justify-center rounded-lg border border-slate-300 bg-slate-50 text-sm font-semibold text-slate-900">
                 {policy.humanReviewBelowScore || 75}%
@@ -142,7 +142,7 @@ export function ScreeningPolicyEditor({
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between gap-3 mb-1">
           <div className="flex items-center gap-2.5">
-            <Sliders className="h-5 w-5 text-blue-600" />
+            <Sliders className="h-5 w-5 text-[#19191a]" />
             <h4 className="text-sm font-semibold text-slate-900">Scoring Weight Distribution</h4>
           </div>
 
@@ -172,7 +172,7 @@ export function ScreeningPolicyEditor({
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-800">Required Skills</span>
-              <span className="text-xs font-bold text-blue-600">{weights.requiredSkillsWeight}%</span>
+              <span className="text-xs font-bold text-[#19191a]">{weights.requiredSkillsWeight}%</span>
             </div>
             <input
               type="range"
@@ -181,14 +181,14 @@ export function ScreeningPolicyEditor({
               step="5"
               value={weights.requiredSkillsWeight}
               onChange={(e) => handleWeightChange("requiredSkillsWeight", Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full accent-[#19191a] cursor-pointer"
             />
           </div>
 
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-800">Experience Years</span>
-              <span className="text-xs font-bold text-blue-600">{weights.experienceWeight}%</span>
+              <span className="text-xs font-bold text-[#19191a]">{weights.experienceWeight}%</span>
             </div>
             <input
               type="range"
@@ -197,14 +197,14 @@ export function ScreeningPolicyEditor({
               step="5"
               value={weights.experienceWeight}
               onChange={(e) => handleWeightChange("experienceWeight", Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full accent-[#19191a] cursor-pointer"
             />
           </div>
 
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-800">Education Credentials</span>
-              <span className="text-xs font-bold text-blue-600">{weights.educationWeight}%</span>
+              <span className="text-xs font-bold text-[#19191a]">{weights.educationWeight}%</span>
             </div>
             <input
               type="range"
@@ -213,14 +213,14 @@ export function ScreeningPolicyEditor({
               step="5"
               value={weights.educationWeight}
               onChange={(e) => handleWeightChange("educationWeight", Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full accent-[#19191a] cursor-pointer"
             />
           </div>
 
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-800">Preferred / Bonus Skills</span>
-              <span className="text-xs font-bold text-blue-600">{weights.preferredSkillsWeight}%</span>
+              <span className="text-xs font-bold text-[#19191a]">{weights.preferredSkillsWeight}%</span>
             </div>
             <input
               type="range"
@@ -229,14 +229,14 @@ export function ScreeningPolicyEditor({
               step="5"
               value={weights.preferredSkillsWeight}
               onChange={(e) => handleWeightChange("preferredSkillsWeight", Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full accent-[#19191a] cursor-pointer"
             />
           </div>
 
           <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 sm:col-span-2">
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold text-slate-800">Certifications & Custom Criteria</span>
-              <span className="text-xs font-bold text-blue-600">{weights.otherWeight}%</span>
+              <span className="text-xs font-bold text-[#19191a]">{weights.otherWeight}%</span>
             </div>
             <input
               type="range"
@@ -245,7 +245,7 @@ export function ScreeningPolicyEditor({
               step="5"
               value={weights.otherWeight}
               onChange={(e) => handleWeightChange("otherWeight", Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full accent-[#19191a] cursor-pointer"
             />
           </div>
         </div>

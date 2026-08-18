@@ -320,7 +320,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             <select
               value={workplaceType}
               onChange={(e) => setWorkplaceType(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
             >
               <option value="REMOTE">Remote</option>
               <option value="HYBRID">Hybrid</option>
@@ -335,7 +335,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             <select
               value={employmentType}
               onChange={(e) => setEmploymentType(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
             >
               <option value="FULL_TIME">Full-time</option>
               <option value="PART_TIME">Part-time</option>
@@ -380,7 +380,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+              className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
             >
               <option value="PUBLISHED">Published (Open for Applications)</option>
               <option value="DRAFT">Draft</option>
@@ -432,7 +432,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
               type="button"
               onClick={handleGenerateWithAI}
               disabled={generatingAi}
-              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md text-xs font-semibold px-4 py-2"
+              className="gap-2 bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md text-xs font-semibold px-4 py-2"
               title="Generate full description from requirements"
             >
               {generatingAi ? (

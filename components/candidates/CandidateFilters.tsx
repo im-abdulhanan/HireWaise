@@ -43,7 +43,7 @@ export function CandidateFilters({
           <select
             value={categoryFilter}
             onChange={(e) => onCategoryChange(e.target.value)}
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
           >
             <option value="ALL">All AI Match Categories</option>
             <option value="STRONG_MATCH">Strong Match</option>
@@ -57,7 +57,7 @@ export function CandidateFilters({
           <select
             value={statusFilter}
             onChange={(e) => onStatusChange(e.target.value)}
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
           >
             <option value="ALL">All Pipeline Statuses</option>
             <option value="NEW">New</option>
@@ -74,7 +74,7 @@ export function CandidateFilters({
           <select
             value={sortBy}
             onChange={(e) => onSortChange(e.target.value)}
-            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none"
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-900 focus:ring-2 focus:ring-[#19191a] outline-none"
           >
             <option value="score_desc">Score: High to Low</option>
             <option value="score_asc">Score: Low to High</option>

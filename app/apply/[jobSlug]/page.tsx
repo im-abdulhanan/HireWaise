@@ -185,7 +185,7 @@ export default function CandidateApplyPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#19191a] border-t-transparent" />
           <p className="text-sm font-medium text-slate-500">Loading job opening...</p>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function CandidateApplyPage() {
   // 2. 404 Position Not Found State (Intermediate Typography)
   if (isNotFound || !job) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-between text-slate-900 selection:bg-blue-600 selection:text-white">
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-between text-[#19191a] selection:bg-[#19191a] selection:text-white">
         <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -230,7 +230,7 @@ export default function CandidateApplyPage() {
 
             <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col gap-2.5">
               <Link href="/">
-                <Button className="w-full gap-2 text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white">
+                <Button className="w-full gap-2 text-xs font-semibold bg-[#19191a] hover:bg-[#2b2b2d] text-white">
                   <span>Return to Homepage</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
@@ -259,12 +259,12 @@ export default function CandidateApplyPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-blue-600 selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-slate-50 text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between">
       {/* Top Company Brand Navigation */}
       <header className="border-b border-slate-200 bg-white/90 sticky top-0 z-20 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-bold shadow-sm shadow-blue-500/20">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#19191a] text-white font-bold shadow-sm">
               {job.company?.name?.charAt(0) || "C"}
             </div>
             <div>
@@ -368,7 +368,7 @@ export default function CandidateApplyPage() {
             {job.requirements && job.requirements.length > 0 && (
               <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-4">
                 <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
+                  <Sparkles className="h-4 w-4 text-[#19191a]" />
                   Role Qualifications
                 </h2>
 
@@ -380,7 +380,7 @@ export default function CandidateApplyPage() {
                     <ul className="space-y-2">
                       {requiredReqs.map((req: any, idx: number) => (
                         <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                          <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+                          <CheckCircle2 className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5" />
                           <span>
                             <strong>{req.title}</strong>
                             {req.minimumValue ? ` (${req.minimumValue}+ years required)` : ""}
@@ -528,7 +528,7 @@ export default function CandidateApplyPage() {
                       onClick={() => fileInputRef.current?.click()}
                       className={`cursor-pointer rounded-xl border-2 border-dashed p-5 text-center transition-all ${
                         dragActive
-                          ? "border-blue-600 bg-blue-50/50"
+                          ? "border-[#19191a] bg-slate-100"
                           : resumeFile
                           ? "border-emerald-500 bg-emerald-50/30"
                           : "border-slate-300 hover:border-slate-400 bg-slate-50/50"
@@ -591,7 +591,7 @@ export default function CandidateApplyPage() {
                       id="consent"
                       checked={consentChecked}
                       onChange={(e) => setConsentChecked(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#19191a] focus:ring-[#19191a]"
                       required
                     />
                     <label htmlFor="consent" className="text-[11px] text-slate-500 leading-snug cursor-pointer">
@@ -602,7 +602,7 @@ export default function CandidateApplyPage() {
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-md text-xs font-semibold py-2.5 mt-2"
+                    className="w-full gap-2 bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md text-xs font-semibold py-2.5 mt-2"
                   >
                     {submitting ? (
                       <>

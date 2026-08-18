@@ -41,7 +41,7 @@ export function FAQSection() {
     <section id="faq" className="py-24 bg-slate-50 border-t border-slate-200/80">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
             Frequently Asked Questions
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
@@ -60,12 +60,12 @@ export function FAQSection() {
                 <button
                   type="button"
                   onClick={() => toggle(idx)}
-                  className="flex w-full items-center justify-between p-5 text-left text-sm font-bold text-slate-900 hover:text-blue-600 transition-colors"
+                  className="flex w-full items-center justify-between p-5 text-left text-sm font-bold text-slate-900 hover:text-[#19191a] transition-colors"
                 >
                   <span className="pr-4">{faq.q}</span>
                   <ChevronDown
                     className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 text-blue-600" : ""
+                      isOpen ? "rotate-180 text-[#19191a]" : ""
                     }`}
                   />
                 </button>

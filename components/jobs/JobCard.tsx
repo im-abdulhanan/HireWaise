@@ -90,7 +90,7 @@ export function JobCard({
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 href={`/dashboard/jobs/${job.id}`}
-                className="text-base font-semibold text-slate-900 hover:text-blue-600 transition-colors line-clamp-1"
+                className="text-base font-semibold text-slate-900 hover:text-[#19191a] transition-colors line-clamp-1"
               >
                 {job.title}
               </Link>
@@ -170,7 +170,7 @@ export function JobCard({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            className="gap-1.5 text-xs text-[#19191a] hover:text-black hover:bg-slate-100"
           >
             <Users className="h-3.5 w-3.5" />
             <span>Candidates ({job.totalApplications ?? 0})</span>

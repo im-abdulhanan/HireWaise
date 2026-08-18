@@ -180,12 +180,12 @@ export default function JobOverviewPage() {
       </div>
 
       {/* Public Candidate Application URL Box */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-xl border border-slate-300 bg-slate-100/70 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-blue-950 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-[#19191a] uppercase tracking-wider">
             Public Candidate Application Link
           </p>
-          <p className="text-xs font-mono text-blue-700 mt-0.5 truncate select-all">
+          <p className="text-xs font-mono text-[#19191a] mt-0.5 truncate select-all">
             {applyUrl}
           </p>
         </div>
@@ -195,7 +195,7 @@ export default function JobOverviewPage() {
             size="sm"
             variant="outline"
             onClick={handleCopyLink}
-            className="gap-1.5 bg-white text-xs border-blue-300 text-blue-800 hover:bg-blue-100"
+            className="gap-1.5 bg-white text-xs border-slate-300 text-[#19191a] hover:bg-slate-50"
           >
             {copied ? (
               <>
@@ -211,7 +211,7 @@ export default function JobOverviewPage() {
           </Button>
 
           <a href={applyUrl} target="_blank" rel="noopener noreferrer">
-            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-blue-700">
+            <Button size="sm" variant="ghost" className="h-9 w-9 p-0 text-[#19191a]">
               <ExternalLink className="h-4 w-4" />
             </Button>
           </a>
@@ -225,7 +225,7 @@ export default function JobOverviewPage() {
           {/* Job Requirements */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
             <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-blue-600" />
+              <CheckCircle2 className="h-4 w-4 text-[#19191a]" />
               Configured Requirements ({job.requirements?.length || 0})
             </h3>
 
@@ -238,11 +238,11 @@ export default function JobOverviewPage() {
                   {requiredReqs.map((req: any) => (
                     <span
                       key={req.id || req._id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-900"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-medium text-[#19191a]"
                     >
                       <span>{req.title}</span>
                       {req.minimumValue && (
-                        <span className="text-[10px] text-blue-600 font-bold">
+                        <span className="text-[10px] text-[#19191a] font-bold">
                           ({req.minimumValue} yrs)
                         </span>
                       )}
@@ -285,7 +285,7 @@ export default function JobOverviewPage() {
           {/* Policy */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-blue-600" />
+              <ShieldCheck className="h-4 w-4 text-[#19191a]" />
               Screening Policy
             </h4>
 
@@ -323,42 +323,42 @@ export default function JobOverviewPage() {
           {/* Scoring Weights */}
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
             <h4 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Sliders className="h-4 w-4 text-blue-600" />
+              <Sliders className="h-4 w-4 text-[#19191a]" />
               Scoring Weights
             </h4>
 
             <div className="space-y-2.5 text-xs text-slate-700">
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Required Skills:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-[#19191a]">
                   {job.scoringWeights?.requiredSkillsWeight || 40}%
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Experience:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-[#19191a]">
                   {job.scoringWeights?.experienceWeight || 25}%
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Education:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-[#19191a]">
                   {job.scoringWeights?.educationWeight || 15}%
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1 border-b border-slate-100">
                 <span>Preferred Skills:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-[#19191a]">
                   {job.scoringWeights?.preferredSkillsWeight || 10}%
                 </span>
               </div>
 
               <div className="flex items-center justify-between py-1">
                 <span>Certifications/Other:</span>
-                <span className="font-bold text-blue-600">
+                <span className="font-bold text-[#19191a]">
                   {job.scoringWeights?.otherWeight || 10}%
                 </span>
               </div>

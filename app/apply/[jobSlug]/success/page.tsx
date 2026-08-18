@@ -43,7 +43,7 @@ export default function ApplicationSuccessPage() {
               What Happens Next:
             </h4>
             <div className="flex items-start gap-2.5 text-xs text-slate-600">
-              <FileCheck className="h-4 w-4 text-blue-600 shrink-0 mt-0.5" />
+              <FileCheck className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5" />
               <span>
                 Our automated engine analyzed your experience against stated qualifications to prepare an objective evidence summary.
               </span>

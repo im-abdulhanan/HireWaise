@@ -58,7 +58,7 @@ export default function CandidateDetailPage() {
           {error || "The requested candidate profile does not exist or you do not have permission to view it."}
         </p>
         <Link href="/dashboard/candidates">
-          <button className="text-xs font-semibold text-blue-600 hover:underline">
+          <button className="text-xs font-semibold text-[#19191a] hover:underline">
             ← Return to Candidates
           </button>
         </Link>

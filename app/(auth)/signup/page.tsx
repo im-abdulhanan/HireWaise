@@ -81,10 +81,10 @@ export default function SignupPage() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#19191a] text-white shadow-md">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">ScreenAI</span>
+            <span className="text-xl font-bold text-[#19191a] tracking-tight">ScreenAI</span>
           </Link>
         </div>
         <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-slate-900">
@@ -92,7 +92,7 @@ export default function SignupPage() {
         </h2>
         <p className="mt-1.5 text-center text-xs text-slate-500">
           Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-500 underline-offset-4 hover:underline">
+          <Link href="/login" className="font-semibold text-[#19191a] underline-offset-4 hover:underline">
             Sign in here
           </Link>
         </p>

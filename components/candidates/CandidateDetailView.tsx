@@ -201,7 +201,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           onClick={() => setActiveTab("evidence")}
           className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "evidence"
-              ? "border-blue-600 text-blue-600"
+              ? "border-[#19191a] text-[#19191a]"
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
@@ -213,7 +213,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           onClick={() => setActiveTab("resume")}
           className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "resume"
-              ? "border-blue-600 text-blue-600"
+              ? "border-[#19191a] text-[#19191a]"
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
@@ -225,7 +225,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           onClick={() => setActiveTab("notes")}
           className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "notes"
-              ? "border-blue-600 text-blue-600"
+              ? "border-[#19191a] text-[#19191a]"
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
@@ -237,7 +237,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           onClick={() => setActiveTab("telemetry")}
           className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition-colors whitespace-nowrap ${
             activeTab === "telemetry"
-              ? "border-blue-600 text-blue-600"
+              ? "border-[#19191a] text-[#19191a]"
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
@@ -251,9 +251,9 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
         <div className="space-y-6">
           {/* Executive Summary Card */}
           {screeningResult?.summary && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
-              <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1.5 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-blue-600" />
+            <div className="rounded-xl border border-slate-300 bg-slate-100/60 p-5">
+              <h3 className="text-xs font-bold text-[#19191a] uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-[#19191a]" />
                 AI Screening Executive Summary
               </h3>
               <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-medium">
@@ -405,14 +405,14 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           {/* Work Experience Timeline */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
             <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-6 flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-blue-600" />
+              <Briefcase className="h-4 w-4 text-[#19191a]" />
               Work History ({candidate?.experience?.length || 0} Roles • {candidate?.totalExperienceYears || 0} Years Total)
             </h3>
 
             <div className="space-y-6 relative border-l-2 border-slate-200 ml-3 pl-6">
               {candidate?.experience?.map((exp: any, i: number) => (
                 <div key={i} className="relative group">
-                  <div className="absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full border-2 border-blue-600 bg-white" />
+                  <div className="absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full border-2 border-[#19191a] bg-white" />
 
                   <div>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
@@ -425,7 +425,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                       </span>
                     </div>
 
-                    <p className="text-xs font-semibold text-blue-700 mt-0.5">
+                    <p className="text-xs font-semibold text-slate-700 mt-0.5">
                       {exp.company}
                     </p>
 
@@ -438,7 +438,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                     {exp.skillsUsed && exp.skillsUsed.length > 0 && (
                       <div className="mt-2.5 flex flex-wrap gap-1.5">
                         {exp.skillsUsed.map((s: string, idx: number) => (
-                          <span key={idx} className="rounded bg-blue-50 text-blue-700 text-[10px] font-medium px-2 py-0.5">
+                          <span key={idx} className="rounded bg-slate-100 text-[#19191a] text-[10px] font-medium px-2 py-0.5">
                             {s}
                           </span>
                         ))}
@@ -453,7 +453,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
           {/* Education & Credentials */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
             <h3 className="text-xs font-semibold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <GraduationCap className="h-4 w-4 text-blue-600" />
+              <GraduationCap className="h-4 w-4 text-[#19191a]" />
               Education & Academic Credentials
             </h3>
 
@@ -461,7 +461,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
               {candidate?.education?.map((edu: any, i: number) => (
                 <div key={i} className="rounded-lg border border-slate-200 bg-slate-50/50 p-4">
                   <p className="text-sm font-bold text-slate-900">{edu.degree || "Degree"}</p>
-                  <p className="text-xs font-semibold text-blue-600 mt-0.5">{edu.institution}</p>
+                  <p className="text-xs font-semibold text-[#19191a] mt-0.5">{edu.institution}</p>
                   {edu.fieldOfStudy && (
                     <p className="text-xs text-slate-500 mt-1">Major: {edu.fieldOfStudy}</p>
                   )}
@@ -532,7 +532,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
             {/* Version & Model Info */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-blue-600" />
+                <Sparkles className="h-4 w-4 text-[#19191a]" />
                 Screening Execution Telemetry
               </h3>
 
@@ -581,38 +581,38 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
             {/* Weights Snapshot */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 flex items-center gap-2">
-                <Sliders className="h-4 w-4 text-blue-600" />
+                <Sliders className="h-4 w-4 text-[#19191a]" />
                 Scoring Weights Snapshot (v{screeningResult?.screeningVersion || 1})
               </h3>
 
               <div className="space-y-2.5 text-xs text-slate-700">
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span>Required Skills Weight:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-[#19191a]">
                     {screeningResult?.scoringWeightsSnapshot?.requiredSkillsWeight ?? 40}%
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span>Experience Weight:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-[#19191a]">
                     {screeningResult?.scoringWeightsSnapshot?.experienceWeight ?? 25}%
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span>Education Weight:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-[#19191a]">
                     {screeningResult?.scoringWeightsSnapshot?.educationWeight ?? 15}%
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span>Preferred Skills Weight:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-[#19191a]">
                     {screeningResult?.scoringWeightsSnapshot?.preferredSkillsWeight ?? 10}%
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5">
                   <span>Other/Certs Weight:</span>
-                  <span className="font-bold text-blue-600">
+                  <span className="font-bold text-[#19191a]">
                     {screeningResult?.scoringWeightsSnapshot?.otherWeight ?? 10}%
                   </span>
                 </div>
