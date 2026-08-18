@@ -26,6 +26,7 @@ export default function GoogleSheetsIntegrationPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
 
+  const [connecting, setConnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [creatingSheet, setCreatingSheet] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -60,6 +61,29 @@ export default function GoogleSheetsIntegrationPage() {
       setError(decodeURIComponent(errorParam));
     }
   }, [successParam, errorParam]);
+
+  // Connect via OAuth 2.0
+  const handleConnectGoogle = async () => {
+    setConnecting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const res = await fetch("/api/google/connect", {
+        headers: { Accept: "application/json" },
+      });
+      const json = await res.json();
+
+      if (!res.ok || !json.success || !json.url) {
+        throw new Error(json.error || "Failed to initiate Google authorization.");
+      }
+
+      window.location.href = json.url;
+    } catch (err: any) {
+      setError(err.message || "Failed to connect to Google Sheets.");
+      setConnecting(false);
+    }
+  };
 
   // Sync Now
   const handleSyncNow = async () => {
@@ -214,12 +238,23 @@ export default function GoogleSheetsIntegrationPage() {
 
           <div>
             {!isConnected ? (
-              <a href="/api/google/connect">
-                <Button className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
-                  <FileSpreadsheet className="h-4 w-4" />
-                  <span>Connect Google Sheets</span>
-                </Button>
-              </a>
+              <Button
+                onClick={handleConnectGoogle}
+                disabled={connecting}
+                className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+              >
+                {connecting ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Connecting to Google...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileSpreadsheet className="h-4 w-4" />
+                    <span>Connect Google Sheets</span>
+                  </>
+                )}
+              </Button>
             ) : (
               <Button
                 variant="outline"
@@ -238,107 +273,108 @@ export default function GoogleSheetsIntegrationPage() {
 
       {/* Connected Spreadsheet Details & Controls */}
       {isConnected && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h3 className="text-base font-bold text-slate-900">Screening Spreadsheet</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Target Google Sheet storing candidate screening records and evaluation evidence.
-              </p>
-            </div>
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <Table className="h-5 w-5 text-emerald-600" />
+                  <span>Linked Google Spreadsheet</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Live target spreadsheet for candidate screening sync.
+                </p>
+              </div>
 
-            <div className="flex items-center gap-2.5 flex-wrap">
-              {!data?.spreadsheetId ? (
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <Button
+                  variant="outline"
                   size="sm"
                   onClick={handleCreateSheet}
-                  disabled={creatingSheet}
-                  className="gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  disabled={creatingSheet || syncing}
+                  className="gap-1.5 text-xs"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Create New Screening Sheet</span>
+                  <span>{creatingSheet ? "Creating..." : "Create New Sheet"}</span>
                 </Button>
-              ) : (
-                <>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleSyncNow}
-                    disabled={syncing}
-                    className="gap-1.5 text-xs"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin text-blue-600" : ""}`} />
-                    <span>{syncing ? "Syncing..." : "Sync Now"}</span>
-                  </Button>
 
-                  {data?.spreadsheetUrl && (
+                <Button
+                  size="sm"
+                  onClick={handleSyncNow}
+                  disabled={syncing || creatingSheet || !data?.spreadsheetId}
+                  className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+                  <span>{syncing ? "Syncing Records..." : "Sync Candidates Now"}</span>
+                </Button>
+              </div>
+            </div>
+
+            {data?.spreadsheetId ? (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Spreadsheet Title</p>
+                    <p className="text-sm font-bold text-slate-900 mt-0.5">{data.spreadsheetTitle || "ScreenAI Screening Results"}</p>
+                  </div>
+
+                  {data.spreadsheetUrl && (
                     <a
                       href={data.spreadsheetUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Button size="sm" className="gap-1.5 text-xs bg-blue-600 hover:bg-blue-700">
+                      <Button size="sm" variant="outline" className="gap-1.5 text-xs bg-white">
                         <span>Open in Google Sheets</span>
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
                       </Button>
                     </a>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-200 text-xs">
+                  <div>
+                    <span className="text-slate-500">Spreadsheet ID:</span>
+                    <p className="font-mono text-slate-800 text-[11px] truncate mt-0.5">{data.spreadsheetId}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Sync Status:</span>
+                    <p className="font-semibold text-slate-900 mt-0.5">{data.syncStatus || "IDLE"}</p>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Last Synced:</span>
+                    <p className="text-slate-800 mt-0.5">{data.lastSyncedAt ? formatDateTime(data.lastSyncedAt) : "Never synced yet"}</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-amber-200 bg-amber-50/50 p-6 text-center">
+                <p className="text-sm font-semibold text-amber-900">No Spreadsheet Linked</p>
+                <p className="text-xs text-amber-700 mt-1 max-w-md mx-auto">
+                  Click &ldquo;Create New Sheet&rdquo; above to automatically generate a formatted 17-column spreadsheet in your Google Drive.
+                </p>
+              </div>
+            )}
           </div>
 
-          {data?.spreadsheetId ? (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">Spreadsheet Title:</span>
-                <span className="font-bold text-slate-900">{data.spreadsheetTitle || "Candidate Screening Pipeline"}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">Spreadsheet ID:</span>
-                <span className="font-mono text-[11px] text-slate-600">{data.spreadsheetId}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
-                <span className="font-semibold text-slate-700">Last Synchronized:</span>
-                <span className="text-slate-600">{data.lastSyncedAt ? formatDateTime(data.lastSyncedAt) : "Never"}</span>
-              </div>
+          {/* Standard 17-Column Schema Preview */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Standardized 17-Column Data Schema</h4>
+            <p className="text-xs text-slate-500 mb-4">
+              ScreenAI exports candidate screening records strictly formatted into 17 standardized columns:
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">
+              {SCREENING_SHEET_HEADERS.map((header, idx) => (
+                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100">
+                  <span className="font-mono text-[10px] text-slate-400 font-semibold w-4 text-right">{idx + 1}.</span>
+                  <span className="text-slate-800 font-medium truncate">{header}</span>
+                </div>
+              ))}
             </div>
-          ) : (
-            <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center bg-slate-50">
-              <FileSpreadsheet className="mx-auto h-8 w-8 text-slate-400 mb-2" />
-              <p className="text-sm font-medium text-slate-700">No Screening Spreadsheet Linked Yet</p>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Click "Create New Screening Sheet" to generate a pre-formatted 17-column spreadsheet in your Google Drive.
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       )}
-
-      {/* 17-Column Schema Documentation */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center gap-2">
-          <Table className="h-4 w-4 text-blue-600" />
-          Standard 17-Column Spreadsheet Structure
-        </h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Every candidate screening syncs automatically with the following standardized recruiter data columns:
-        </p>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">
-          {SCREENING_SHEET_HEADERS.map((header, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-slate-700 font-medium"
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-200 text-[10px] font-bold text-slate-600">
-                {i + 1}
-              </span>
-              <span className="truncate">{header}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

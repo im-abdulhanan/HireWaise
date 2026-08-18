@@ -10,6 +10,15 @@ export async function GET(req: NextRequest) {
     if (!tenant) return unauthorizedResponse();
 
     const authUrl = getGoogleAuthUrl(tenant.companyId);
+
+    const acceptsJson =
+      req.headers.get("accept")?.includes("application/json") ||
+      req.nextUrl.searchParams.get("json") === "true";
+
+    if (acceptsJson) {
+      return NextResponse.json({ success: true, url: authUrl });
+    }
+
     return NextResponse.redirect(authUrl);
   } catch (error: any) {
     console.error("Google connect error:", error);
