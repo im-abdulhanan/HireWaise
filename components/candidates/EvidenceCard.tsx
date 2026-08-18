@@ -8,13 +8,12 @@ import {
   Quote,
   ShieldCheck,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { MatchStatus } from "@/models/ScreeningRequirementResult";
 
 interface EvidenceCardProps {
   requirementTitle: string;
   category: "REQUIRED" | "PREFERRED" | "OPTIONAL";
-  type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM";
+  type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM";
   status: MatchStatus;
   evidenceQuote?: string;
   reasoning: string;
@@ -32,17 +31,12 @@ export function EvidenceCard({
   confidence = 0.9,
   verifiedByAi = true,
 }: EvidenceCardProps) {
-  const isMatched = status === "MATCHED";
-  const isPartial = status === "PARTIAL";
-  const isNotFound = status === "NOT_FOUND";
-  const isUnclear = status === "UNCLEAR";
-
   const statusConfig = {
     MATCHED: {
       label: "Matched",
       variant: "success" as const,
       icon: CheckCircle2,
-      border: "border-emerald-200 bg-emerald-50/30",
+      border: "border-emerald-200/80 bg-emerald-50/40",
       iconColor: "text-emerald-600",
       badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
     },
@@ -50,7 +44,7 @@ export function EvidenceCard({
       label: "Partial Match",
       variant: "warning" as const,
       icon: AlertCircle,
-      border: "border-amber-200 bg-amber-50/30",
+      border: "border-amber-200/80 bg-amber-50/40",
       iconColor: "text-amber-600",
       badgeColor: "bg-amber-100 text-amber-800 border-amber-300",
     },
@@ -58,7 +52,7 @@ export function EvidenceCard({
       label: "Unclear / Review",
       variant: "purple" as const,
       icon: HelpCircle,
-      border: "border-purple-200 bg-purple-50/30",
+      border: "border-purple-200/80 bg-purple-50/40",
       iconColor: "text-purple-600",
       badgeColor: "bg-purple-100 text-purple-800 border-purple-300",
     },
@@ -66,7 +60,7 @@ export function EvidenceCard({
       label: "Not Found",
       variant: "destructive" as const,
       icon: XCircle,
-      border: "border-rose-200 bg-rose-50/30",
+      border: "border-rose-200/80 bg-rose-50/40",
       iconColor: "text-rose-600",
       badgeColor: "bg-rose-100 text-rose-800 border-rose-300",
     },
@@ -83,25 +77,25 @@ export function EvidenceCard({
 
   return (
     <div
-      className={`rounded-xl border p-4.5 transition-all shadow-xs ${statusConfig.border}`}
+      className={`rounded-2xl border p-6 sm:p-7 transition-all shadow-xs ${statusConfig.border}`}
     >
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-        <div className="flex items-center gap-2.5">
-          <StatusIcon className={`h-5 w-5 shrink-0 ${statusConfig.iconColor}`} />
-          <div>
-            <h4 className="text-sm font-semibold text-slate-900 leading-snug">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <StatusIcon className={`h-5 w-5 shrink-0 mt-0.5 ${statusConfig.iconColor}`} />
+          <div className="min-w-0">
+            <h4 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
               {requirementTitle}
             </h4>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
                 {type}
               </span>
               <span className="text-slate-300">•</span>
               <span
-                className={`text-[10px] font-semibold uppercase tracking-wider ${
+                className={`text-[10px] font-bold uppercase tracking-wider ${
                   category === "REQUIRED"
-                    ? "text-[#19191a] font-bold"
+                    ? "text-[#19191a]"
                     : "text-slate-500"
                 }`}
               >
@@ -111,14 +105,14 @@ export function EvidenceCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 pt-0.5">
           <span
-            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statusConfig.badgeColor}`}
+            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${statusConfig.badgeColor}`}
           >
             {statusConfig.label}
           </span>
-          {confidence && (
-            <span className="text-[11px] font-mono text-slate-500 bg-white/80 border border-slate-200 px-2 py-0.5 rounded-md">
+          {confidence !== undefined && (
+            <span className="text-[11px] font-mono font-medium text-slate-600 bg-white/90 border border-slate-200 px-2.5 py-1 rounded-md shadow-2xs">
               {Math.round(confidence * 100)}% conf
             </span>
           )}
@@ -127,10 +121,10 @@ export function EvidenceCard({
 
       {/* Verbatim Evidence Quote Box */}
       {evidenceQuote && (
-        <div className="mt-3.5 rounded-lg border border-slate-200/80 bg-white p-3 shadow-xs">
-          <div className="flex items-start gap-2">
-            <Quote className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5 rotate-180" />
-            <p className="text-xs italic text-slate-700 leading-relaxed font-serif">
+        <div className="mt-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
+          <div className="flex items-start gap-2.5">
+            <Quote className="h-4 w-4 text-slate-400 shrink-0 mt-0.5 rotate-180" />
+            <p className="text-xs sm:text-sm italic text-slate-800 leading-relaxed font-serif">
               "{evidenceQuote}"
             </p>
           </div>
@@ -138,16 +132,16 @@ export function EvidenceCard({
       )}
 
       {/* AI Explanation / Reasoning */}
-      <div className="mt-3 flex items-start gap-2 text-xs text-slate-600">
-        <p className="leading-relaxed">
-          <strong className="text-slate-800">Reasoning:</strong> {reasoning}
+      <div className="mt-3.5 flex items-start gap-2 text-xs sm:text-sm text-slate-700 leading-relaxed">
+        <p>
+          <strong className="text-slate-900 font-semibold">Reasoning:</strong> {reasoning}
         </p>
       </div>
 
       {/* Verification footer */}
       {verifiedByAi && (
-        <div className="mt-3 pt-2.5 border-t border-slate-200/50 flex items-center justify-between text-[11px] text-slate-400">
-          <span className="flex items-center gap-1">
+        <div className="mt-4 pt-3.5 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+          <span className="flex items-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
             <span>Audited against resume text</span>
           </span>

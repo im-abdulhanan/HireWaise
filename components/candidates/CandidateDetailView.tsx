@@ -350,7 +350,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                 No requirement results recorded for this screening.
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {requirementResults.map((req) => (
                   <EvidenceCard
                     key={req.id}
