@@ -22,20 +22,14 @@ export async function POST(req: NextRequest) {
       requirements = [],
     } = body;
 
-    const finalTitle = (title || jobTitle || "").trim();
+    let finalTitle = (title || jobTitle || "").trim();
 
     if (!finalTitle) {
-      return NextResponse.json(
-        { error: "Please enter a Job Title before generating a description." },
-        { status: 400 }
-      );
-    }
-
-    if (!requirements || requirements.length === 0) {
-      return NextResponse.json(
-        { error: "Please configure at least one Job Requirement before generating a description." },
-        { status: 400 }
-      );
+      if (requirements && requirements.length > 0 && requirements[0].title) {
+        finalTitle = `${requirements[0].title} Specialist`;
+      } else {
+        finalTitle = "Open Position";
+      }
     }
 
     const { description, telemetry } = await generateJobDescriptionWithGemini({

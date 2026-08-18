@@ -92,14 +92,15 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
   // Generate Job Description from configured requirements with AI
   const handleGenerateWithAI = async () => {
-    if (!title.trim()) {
-      setError("Please enter a Job Title in Section 1 before generating a description.");
-      return;
-    }
-
-    if (!requirements || requirements.length === 0) {
-      setError("Please add at least one Job Requirement in Section 2 before generating a description.");
-      return;
+    let activeTitle = title.trim();
+    if (!activeTitle) {
+      if (requirements.length > 0 && requirements[0].title) {
+        activeTitle = `${requirements[0].title} Specialist`;
+        setTitle(activeTitle);
+      } else {
+        activeTitle = "Open Position";
+        setTitle(activeTitle);
+      }
     }
 
     setError(null);
@@ -111,12 +112,12 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
-          department,
-          location,
+          title: activeTitle,
+          department: department || "General",
+          location: location || "Remote",
           workplaceType,
           employmentType,
-          requirements,
+          requirements: requirements || [],
         }),
       });
 
@@ -127,7 +128,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
       setDescription(json.data.description);
       setAiSuccessMessage(
-        `Gemini generated a professional job description tailored to your ${requirements.length} configured requirements!`
+        `Gemini generated a professional job description tailored to your requirements!`
       );
     } catch (err: any) {
       setError(err.message || "Failed to generate job description. Please try again.");
@@ -405,8 +406,8 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             <Button
               type="button"
               onClick={handleGenerateWithAI}
-              disabled={generatingAi || !title.trim() || requirements.length === 0}
-              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs text-xs font-semibold"
+              disabled={generatingAi}
+              className="gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md text-xs font-semibold px-4 py-2"
               title="Generate full description from requirements"
             >
               {generatingAi ? (

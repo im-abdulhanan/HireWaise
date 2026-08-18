@@ -238,6 +238,15 @@ export function RequirementEditor({
           })}
         </div>
       )}
+
+      {requirements.length > 0 && (
+        <div className="flex items-center gap-2.5 rounded-xl bg-blue-50/80 border border-blue-200 p-3 text-xs text-blue-900">
+          <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+          <span>
+            <strong>{requirements.length} requirement(s) ready.</strong> Click <strong>"Generate Description with AI"</strong> below to automatically craft your job description.
+          </span>
+        </div>
+      )}
     </div>
   );
 }
