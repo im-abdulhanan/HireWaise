@@ -63,7 +63,7 @@ const JobRequirementSchema = new Schema<IJobRequirement>(
 JobRequirementSchema.index({ jobId: 1, category: 1 });
 
 export const JobRequirement: Model<IJobRequirement> =
-  mongoose.models.JobRequirement ||
+  (mongoose.models.JobRequirement as Model<IJobRequirement>) ||
   mongoose.model<IJobRequirement>("JobRequirement", JobRequirementSchema);
 
 export default JobRequirement;
