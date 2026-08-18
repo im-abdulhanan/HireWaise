@@ -135,9 +135,6 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
       }
 
       setDescription(json.data.description);
-      setAiSuccessMessage(
-        `Gemini generated a professional job description tailored to your requirements!`
-      );
     } catch (err: any) {
       setError(err.message || "Failed to generate job description. Please try again.");
     } finally {
@@ -184,7 +181,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
       setRequirements(mappedList);
       setAiSuccessMessage(
-        `Gemini extracted ${mappedList.length} structured requirements. Review and customize them in Section 2.`
+        `Successfully extracted ${mappedList.length} structured requirements.`
       );
     } catch (err: any) {
       setError(err.message || "AI Analysis failed. Please try again or add requirements manually.");
@@ -441,7 +438,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
               {generatingAi ? (
                 <>
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>Generating with Gemini...</span>
+                  <span>Generating with AI...</span>
                 </>
               ) : (
                 <>
