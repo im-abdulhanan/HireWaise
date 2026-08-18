@@ -14,7 +14,7 @@ export function WorkflowSection() {
     {
       num: "01",
       title: "Create Job & Extract Criteria",
-      desc: "Paste your raw job description. Gemini structured parsing automatically segments required vs preferred qualifications, experience years, and degree expectations.",
+      desc: "Paste your raw job description. AI structured parsing automatically segments required vs preferred qualifications, experience years, and degree expectations.",
     },
     {
       num: "02",
@@ -24,7 +24,7 @@ export function WorkflowSection() {
     {
       num: "03",
       title: "Autonomous Evidence Screening",
-      desc: "Our dual-layer engine runs deterministic qualification rule matching and Gemini citation verification to extract verbatim evidence quotes.",
+      desc: "Our dual-layer engine runs deterministic qualification rule matching and AI citation verification to extract verbatim evidence quotes.",
     },
     {
       num: "04",
@@ -35,9 +35,9 @@ export function WorkflowSection() {
 
   const pipelineStages = [
     { name: "Document Parsing", desc: "PDF/DOCX magic-byte validation & clean text normalization" },
-    { name: "Gemini Resume Extraction", desc: "Structured extraction of timeline, skills, and education" },
+    { name: "AI Resume Extraction", desc: "Structured extraction of timeline, skills, and education" },
     { name: "Deterministic Rule Matcher", desc: "Synonym normalization and strict threshold evaluation" },
-    { name: "Gemini Evidence Verifier", desc: "Zero-hallucination quote audit against raw resume text" },
+    { name: "AI Evidence Verifier", desc: "Zero-hallucination quote audit against raw resume text" },
     { name: "Scoring & Policy Snapshot", desc: "5-dimension weighted scoring and immutable policy versioning" },
     { name: "Live Data Sync", desc: "Instant updates to recruiter dashboard and 17-column Google Sheet" },
   ];

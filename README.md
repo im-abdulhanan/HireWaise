@@ -1,12 +1,12 @@
 # ScreenAI — Production-Ready AI Resume Screening & Candidate Matching SaaS
 
-ScreenAI is an enterprise-ready, B2B SaaS platform that automates initial candidate screening and qualification verification for recruitment teams. It combines **deterministic matching rules**, **Gemini-powered evidence quote extraction**, **strict multi-tenant data isolation**, and **live 17-column Google Sheets synchronization**.
+ScreenAI is an enterprise-ready, B2B SaaS platform that automates initial candidate screening and qualification verification for recruitment teams. It combines **deterministic matching rules**, **AI-powered evidence quote extraction**, **strict multi-tenant data isolation**, and **live 17-column Google Sheets synchronization**.
 
 ---
 
 ## 🌟 Key Features
 
-- **Autonomous AI Screening Engine:** Gemini-powered extraction of skills, timeline, and education with verbatim evidence quotes and zero hallucination guarantees.
+- **Autonomous AI Screening Engine:** AI-powered extraction of skills, timeline, and education with verbatim evidence quotes and zero hallucination guarantees.
 - **Deterministic Matcher & Policy Studio:** Custom scoring weights (Required Skills, Experience, Education, Preferred, Other) with configurable strict rules per job.
 - **Public Candidate Portal:** Zero-friction application submission with drag-and-drop resume upload (PDF/DOCX) and multi-step progress indicators.
 - **Interactive Evidence Audit Cards:** Visual match badges (`MATCHED`, `PARTIAL`, `NOT_FOUND`, `UNCLEAR`) citing exact resume sentences with confidence scores.

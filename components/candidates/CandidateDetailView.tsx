@@ -546,7 +546,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
                   <span>AI Model:</span>
                   <span className="font-mono font-semibold text-slate-900">
-                    {screeningResult?.aiUsage?.model || "gemini-1.5-flash"}
+                    {screeningResult?.aiUsage?.model?.replace("gemini", "AI Engine") || "AI Engine"}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">

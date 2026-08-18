@@ -119,7 +119,7 @@ export default function HomePage() {
                 Deterministic Rule Precision + AI Verification
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                ScreenAI bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by Gemini-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
+                ScreenAI bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by AI-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
               </p>
             </div>
           </div>

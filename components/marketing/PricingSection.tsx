@@ -13,7 +13,7 @@ export function PricingSection() {
       features: [
         "Up to 3 Active Job Positions",
         "250 Candidate Screenings / mo",
-        "Deterministic Matching & Gemini Parsing",
+        "Deterministic Matching & AI Parsing",
         "Evidence Citations & Reasonings",
         "17-Column Google Sheets Sync",
         "1 Recruiter Seat",
@@ -49,7 +49,7 @@ export function PricingSection() {
       features: [
         "Unlimited Active Job Positions",
         "Unlimited Candidate Screenings",
-        "Dedicated Gemini Enterprise API Quota",
+        "Dedicated AI Enterprise API Quota",
         "Custom ATS Integrations (Greenhouse, Lever)",
         "Single Sign-On (SSO / SAML)",
         "SOC2 Compliance Reports & 99.9% SLA",

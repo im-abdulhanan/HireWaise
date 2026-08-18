@@ -185,7 +185,7 @@ export default function DashboardOverviewPage() {
           </div>
           <h3 className="text-lg font-bold text-slate-900">No Jobs Created Yet</h3>
           <p className="text-sm text-slate-500 mt-1.5 max-w-md mx-auto">
-            Create your first job position, use Gemini to automatically extract requirements, and share the public application link.
+            Create your first job position, use AI to automatically extract requirements, and share the public application link.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Link href="/dashboard/jobs/new">
