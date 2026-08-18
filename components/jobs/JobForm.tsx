@@ -85,14 +85,61 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
   // UI state
   const [analyzingAi, setAnalyzingAi] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
 
-  // Trigger Gemini Job Analyzer
+  // Generate Job Description from configured requirements with AI
+  const handleGenerateWithAI = async () => {
+    if (!title.trim()) {
+      setError("Please enter a Job Title in Section 1 before generating a description.");
+      return;
+    }
+
+    if (!requirements || requirements.length === 0) {
+      setError("Please add at least one Job Requirement in Section 2 before generating a description.");
+      return;
+    }
+
+    setError(null);
+    setAiSuccessMessage(null);
+    setGeneratingAi(true);
+
+    try {
+      const res = await fetch("/api/jobs/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          department,
+          location,
+          workplaceType,
+          employmentType,
+          requirements,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to generate job description with AI.");
+      }
+
+      setDescription(json.data.description);
+      setAiSuccessMessage(
+        `Gemini generated a professional job description tailored to your ${requirements.length} configured requirements!`
+      );
+    } catch (err: any) {
+      setError(err.message || "Failed to generate job description. Please try again.");
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
+
+  // Trigger Gemini Job Analyzer (extracts requirements from description text)
   const handleAnalyzeWithAI = async () => {
     if (!description || description.trim().length < 20) {
-      setError("Please enter a detailed job description before running AI analysis.");
+      setError("Please enter a detailed job description before extracting requirements.");
       return;
     }
 
@@ -128,7 +175,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
       setRequirements(mappedList);
       setAiSuccessMessage(
-        `Gemini extracted ${mappedList.length} structured requirements. Review and customize them below.`
+        `Gemini extracted ${mappedList.length} structured requirements. Review and customize them in Section 2.`
       );
     } catch (err: any) {
       setError(err.message || "AI Analysis failed. Please try again or add requirements manually.");
@@ -344,41 +391,61 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
         />
       </div>
 
-      {/* Section 3: Job Description & AI Analyzer */}
+      {/* Section 3: Job Description & AI Generator */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
           <div>
             <h3 className="text-base font-semibold text-slate-900">Job Description</h3>
             <p className="text-xs text-slate-500">
-              Paste the complete job description. Then click "Analyze with AI" to extract structured requirements.
+              Generate a professional description automatically based on your Section 2 requirements, or write/paste your own.
             </p>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleAnalyzeWithAI}
-            disabled={analyzingAi || !description.trim()}
-            className="gap-2 shrink-0 border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 shadow-xs"
-          >
-            {analyzingAi ? (
-              <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
-                <span>Analyzing with Gemini...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 text-blue-600" />
-                <span>Analyze with AI</span>
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              onClick={handleGenerateWithAI}
+              disabled={generatingAi || !title.trim() || requirements.length === 0}
+              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-xs text-xs font-semibold"
+              title="Generate full description from requirements"
+            >
+              {generatingAi ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Generating with Gemini...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 text-amber-300" />
+                  <span>Generate Description with AI</span>
+                </>
+              )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAnalyzeWithAI}
+              disabled={analyzingAi || !description.trim()}
+              className="gap-1.5 text-xs border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 shadow-xs"
+              title="Extract requirements from pasted description"
+            >
+              {analyzingAi ? (
+                <>
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
+                  <span>Extracting...</span>
+                </>
+              ) : (
+                <span>Extract Reqs from Text</span>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="mt-4">
           <Textarea
-            rows={10}
-            placeholder="Paste complete job description here including overview, responsibilities, required technical skills, years of experience, and preferred qualifications..."
+            rows={12}
+            placeholder="Click 'Generate Description with AI' to automatically write a professional job description from your configured requirements, or type/paste your custom description here..."
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
