@@ -336,7 +336,15 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
         </div>
       </div>
 
-      {/* Section 2: Job Description & AI Analyzer */}
+      {/* Section 2: Requirements Editor */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
+        <RequirementEditor
+          requirements={requirements}
+          onChange={setRequirements}
+        />
+      </div>
+
+      {/* Section 3: Job Description & AI Analyzer */}
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
           <div>
@@ -377,14 +385,6 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             className="font-mono text-xs leading-relaxed"
           />
         </div>
-      </div>
-
-      {/* Section 3: Requirements Editor */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <RequirementEditor
-          requirements={requirements}
-          onChange={setRequirements}
-        />
       </div>
 
       {/* Section 4: Policy & Scoring Weights */}
