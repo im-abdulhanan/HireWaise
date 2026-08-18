@@ -26,7 +26,20 @@ PARSING GUIDELINES:
 - normalizedSkills: Lowercase, canonical versions of skills (e.g. "React" -> "react", "Node.js" -> "node.js").
 - experience: Chronological work history with jobTitle, company, start/end dates, description, skillsUsed, and approximate durationYears.
 - totalExperienceYears: Total combined professional experience in years (calculated from work history).
-- education: Degree, institution, fieldOfStudy, graduationYear.
+- education: Array of education entries with:
+  * institution: College or university name.
+  * degree: Degree name (e.g. "Bachelor of Science", "BS Computer Science", "MS Software Engineering").
+  * fieldOfStudy: Major or subject area.
+  * graduationYear: Graduation year if specified.
+  * startDate / endDate: Date strings if available.
+  * isCurrent: boolean (true if currently enrolled/studying).
+  * isCompleted: boolean (true ONLY if explicitly graduated or completed; false if currently enrolled or dropped out; do not assume true if no date/status is given).
+  * academicStatus: "GRADUATED" | "FINAL_YEAR" | "ENROLLED" | "DROPPED_OUT" | "UNCLEAR".
+    - "GRADUATED": Explicitly states graduated, completed, or degree completed in past year.
+    - "FINAL_YEAR": Explicitly states final year, 4th year (of 4-year degree), senior year, or expected graduation within 12 months.
+    - "ENROLLED": States 1st year, 2nd year, 3rd year, freshman, sophomore, junior, or currently studying without completion.
+    - "UNCLEAR": Degree is mentioned with no dates, no year level, and no completion status.
+  * academicYearLevel: Exact year level if stated (e.g. "Final Year", "4th Year", "3rd Year", "2nd Year", "1st Year", "Graduated").
 - highestDegree: Highest level achieved (e.g. "Bachelor's", "Master's", "PhD", "Associate", "High School").
 `.trim();
 

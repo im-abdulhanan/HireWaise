@@ -6,7 +6,9 @@ import { z } from "zod";
 export const ExtractedRequirementItemSchema = z.object({
   title: z.string().min(1, "Requirement title cannot be empty"),
   category: z.enum(["REQUIRED", "PREFERRED", "OPTIONAL"]).default("REQUIRED"),
-  type: z.enum(["SKILL", "EXPERIENCE", "EDUCATION", "CERTIFICATION", "CUSTOM"]).default("SKILL"),
+  type: z
+    .enum(["SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM"])
+    .default("SKILL"),
   normalizedKey: z.string().default("requirement"),
   minimumValue: z.number().nullable().optional(),
   description: z.string().nullable().optional(),
@@ -22,7 +24,7 @@ export const JobRequirementsExtractionSchema = z.preprocess(
             category: ["REQUIRED", "PREFERRED", "OPTIONAL"].includes(r.category)
               ? r.category
               : "REQUIRED",
-            type: ["SKILL", "EXPERIENCE", "EDUCATION", "CERTIFICATION", "CUSTOM"].includes(r.type)
+            type: ["SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM"].includes(r.type)
               ? r.type
               : "SKILL",
             normalizedKey: r.normalizedKey || r.slug || "req",
@@ -85,6 +87,15 @@ export const EducationItemSchema = z.object({
   degree: z.string().optional().default(""),
   fieldOfStudy: z.string().optional().default(""),
   graduationYear: z.string().optional().default(""),
+  startDate: z.string().optional().default(""),
+  endDate: z.string().optional().default(""),
+  isCurrent: z.boolean().optional().default(false),
+  isCompleted: z.boolean().optional().default(false),
+  academicStatus: z
+    .enum(["GRADUATED", "FINAL_YEAR", "ENROLLED", "DROPPED_OUT", "UNCLEAR"])
+    .optional()
+    .default("UNCLEAR"),
+  academicYearLevel: z.string().optional().default(""),
 });
 
 export const ProjectItemSchema = z.object({

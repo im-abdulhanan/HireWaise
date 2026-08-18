@@ -1,6 +1,13 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export type MatchStatus = "MATCHED" | "PARTIAL" | "NOT_FOUND" | "UNCLEAR";
+export type RequirementType =
+  | "SKILL"
+  | "EXPERIENCE"
+  | "EDUCATION"
+  | "ACADEMIC_STATUS"
+  | "CERTIFICATION"
+  | "CUSTOM";
 
 export interface IScreeningRequirementResult extends Document {
   screeningResultId: Types.ObjectId;
@@ -10,7 +17,7 @@ export interface IScreeningRequirementResult extends Document {
   jobId: Types.ObjectId;
   requirementTitle: string;
   requirementCategory: "REQUIRED" | "PREFERRED" | "OPTIONAL";
-  requirementType: "SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM";
+  requirementType: RequirementType;
   status: MatchStatus;
   evidenceQuote: string; // Exact quote from resume text
   reasoning: string; // Deterministic/AI explanation
@@ -60,7 +67,7 @@ const ScreeningRequirementResultSchema = new Schema<IScreeningRequirementResult>
     },
     requirementType: {
       type: String,
-      enum: ["SKILL", "EXPERIENCE", "EDUCATION", "CERTIFICATION", "CUSTOM"],
+      enum: ["SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM"],
       required: true,
     },
     status: {

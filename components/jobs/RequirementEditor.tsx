@@ -10,7 +10,7 @@ export interface RequirementItem {
   id?: string;
   title: string;
   category: "REQUIRED" | "PREFERRED" | "OPTIONAL";
-  type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM";
+  type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM";
   normalizedKey?: string;
   minimumValue?: number;
   description?: string;
@@ -21,13 +21,21 @@ interface RequirementEditorProps {
   onChange: (requirements: RequirementItem[]) => void;
 }
 
+const ACADEMIC_STATUS_PRESETS = [
+  "Final year or Graduate",
+  "Final year",
+  "Graduate",
+  "Currently enrolled",
+  "Not currently enrolled",
+];
+
 export function RequirementEditor({
   requirements,
   onChange,
 }: RequirementEditorProps) {
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<"REQUIRED" | "PREFERRED" | "OPTIONAL">("REQUIRED");
-  const [newType, setNewType] = useState<"SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM">("SKILL");
+  const [newType, setNewType] = useState<"SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM">("SKILL");
   const [newMinValue, setNewMinValue] = useState<number | undefined>(undefined);
 
   const handleAdd = () => {
@@ -91,7 +99,7 @@ export function RequirementEditor({
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
           <div className="sm:col-span-5">
             <Input
-              placeholder="e.g. React, 3+ Years Exp, Bachelor's CS"
+              placeholder="e.g. React, 3+ Years Exp, Final year or Graduate"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => {
@@ -119,12 +127,19 @@ export function RequirementEditor({
           <div className="sm:col-span-2">
             <select
               value={newType}
-              onChange={(e) => setNewType(e.target.value as any)}
+              onChange={(e) => {
+                const t = e.target.value as any;
+                setNewType(t);
+                if (t === "ACADEMIC_STATUS" && !newTitle) {
+                  setNewTitle("Final year or Graduate");
+                }
+              }}
               className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="SKILL">Skill</option>
               <option value="EXPERIENCE">Experience</option>
-              <option value="EDUCATION">Education</option>
+              <option value="EDUCATION">Degree Level</option>
+              <option value="ACADEMIC_STATUS">Academic Status</option>
               <option value="CERTIFICATION">Certification</option>
               <option value="CUSTOM">Custom</option>
             </select>
@@ -142,6 +157,28 @@ export function RequirementEditor({
             </Button>
           </div>
         </div>
+
+        {newType === "ACADEMIC_STATUS" && (
+          <div className="mt-3 pt-2.5 border-t border-blue-100">
+            <span className="text-[11px] font-medium text-blue-800 mr-2">Quick presets:</span>
+            <div className="inline-flex flex-wrap gap-1.5 mt-1">
+              {ACADEMIC_STATUS_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setNewTitle(preset)}
+                  className={`rounded-md px-2 py-1 text-xs font-medium transition-all ${
+                    newTitle === preset
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-blue-50 hover:text-blue-700"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {newType === "EXPERIENCE" && (
           <div className="mt-2.5 flex items-center gap-2">

@@ -1,7 +1,13 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export type RequirementCategory = "REQUIRED" | "PREFERRED" | "OPTIONAL";
-export type RequirementType = "SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM";
+export type RequirementType =
+  | "SKILL"
+  | "EXPERIENCE"
+  | "EDUCATION"
+  | "ACADEMIC_STATUS"
+  | "CERTIFICATION"
+  | "CUSTOM";
 
 export interface IJobRequirement extends Document {
   jobId: Types.ObjectId;
@@ -10,7 +16,7 @@ export interface IJobRequirement extends Document {
   type: RequirementType;
   title: string;
   description?: string;
-  normalizedKey: string; // e.g. 'react', 'experience_years_3', 'bachelor_cs'
+  normalizedKey: string; // e.g. 'react', 'experience_years_3', 'bachelor_cs', 'academic_status_final_year_or_graduate'
   minimumValue?: number; // e.g. 3 for 3 years
   weightMultiplier?: number;
   order: number;
@@ -39,7 +45,7 @@ const JobRequirementSchema = new Schema<IJobRequirement>(
     },
     type: {
       type: String,
-      enum: ["SKILL", "EXPERIENCE", "EDUCATION", "CERTIFICATION", "CUSTOM"],
+      enum: ["SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM"],
       default: "SKILL",
     },
     title: { type: String, required: true, trim: true },

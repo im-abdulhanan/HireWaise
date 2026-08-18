@@ -16,6 +16,12 @@ export interface ICandidateEducation {
   degree?: string;
   fieldOfStudy?: string;
   graduationYear?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent?: boolean;
+  isCompleted?: boolean;
+  academicStatus?: "GRADUATED" | "FINAL_YEAR" | "ENROLLED" | "DROPPED_OUT" | "UNCLEAR";
+  academicYearLevel?: string;
 }
 
 export interface ICandidateProject {
@@ -84,6 +90,16 @@ const CandidateSchema = new Schema<ICandidate>(
         degree: { type: String },
         fieldOfStudy: { type: String },
         graduationYear: { type: String },
+        startDate: { type: String },
+        endDate: { type: String },
+        isCurrent: { type: Boolean, default: false },
+        isCompleted: { type: Boolean, default: false },
+        academicStatus: {
+          type: String,
+          enum: ["GRADUATED", "FINAL_YEAR", "ENROLLED", "DROPPED_OUT", "UNCLEAR"],
+          default: "UNCLEAR",
+        },
+        academicYearLevel: { type: String },
       },
     ],
     projects: [

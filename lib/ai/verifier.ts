@@ -25,6 +25,12 @@ ANTI-HALLUCINATION & EVIDENCE RULES:
    - humanReviewRecommended: true if any critical requirement is UNCLEAR or PARTIAL, or if evidence is ambiguous
    - humanReviewReasons: array of specific issues requiring human recruiter attention
    - summary: concise summary of the evidence verification audit.
+6. ACADEMIC STATUS AUDIT RULES:
+   - For ACADEMIC_STATUS requirements (e.g. "Final year or Graduate", "Final year", "Graduate", "Currently enrolled"):
+     * MATCHED: The resume MUST contain explicit proof of being in final year (e.g. "Final Year", "4th Year", "Senior") OR explicit proof of graduation (e.g. "Graduated 2024", "Completed", degree awarded in past year).
+     * NOT_FOUND: The resume explicitly indicates a non-qualifying academic status (e.g. "1st Year", "2nd Year", "3rd Year").
+     * UNCLEAR: The resume lists a degree name (e.g. "Bachelor of Science from Virtual University") with NO graduation date, NO year level, and NO completion indicator.
+     * CRITICAL RULE: NEVER convert a Bachelor's degree into "Graduate" or "Final Year" without explicit textual evidence supporting that status.
 `.trim();
 
 export async function verifyEvidenceWithGemini(params: {

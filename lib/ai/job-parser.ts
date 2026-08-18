@@ -17,14 +17,16 @@ RULES:
    - OPTIONAL: Beneficial extras or edge capabilities.
 2. Extract the minimum required years of experience (numeric value, 0 if not specified).
 3. Extract required degree levels and relevant fields of study (e.g. Bachelor's in Computer Science).
-4. For each requirement, produce an item in the requirementsList with:
-   - title: Clear, concise title (e.g. "React", "3+ Years Backend Experience", "Bachelor's in CS")
+4. Academic Status Requirements:
+   - Criteria regarding current student/graduation status (e.g. "Final year or Graduate", "Final year students only", "Fresh graduates", "Currently enrolled") MUST have type: "ACADEMIC_STATUS" (do NOT classify these as generic degree EDUCATION).
+5. For each requirement, produce an item in the requirementsList with:
+   - title: Clear, concise title (e.g. "React", "3+ Years Backend Experience", "Bachelor's in CS", "Final year or Graduate")
    - category: "REQUIRED" | "PREFERRED" | "OPTIONAL"
-   - type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "CERTIFICATION" | "CUSTOM"
-   - normalizedKey: A machine-friendly lowercase slug (e.g. "skill_react", "exp_years_3", "edu_bachelor_cs")
+   - type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM"
+   - normalizedKey: A machine-friendly lowercase slug (e.g. "skill_react", "exp_years_3", "edu_bachelor_cs", "academic_status_final_year_or_graduate")
    - minimumValue: Numeric value if applicable (e.g. 3 for 3 years)
    - description: Clarifying context if needed
-5. Never invent or hallucinate requirements not stated or implied in the job description.
+6. Never invent or hallucinate requirements not stated or implied in the job description.
 `.trim();
 
 export async function parseJobDescriptionWithGemini(
