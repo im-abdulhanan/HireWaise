@@ -92,6 +92,7 @@ export async function PATCH(
       salaryCurrency,
       description,
       status,
+      applicationDeadline,
       screeningPolicy,
       scoringWeights,
       requirements,
@@ -109,6 +110,9 @@ export async function PATCH(
     if (salaryCurrency !== undefined) job.salaryCurrency = salaryCurrency;
     if (description !== undefined) job.description = description;
     if (status !== undefined) job.status = status;
+    if (applicationDeadline !== undefined) {
+      job.applicationDeadline = applicationDeadline ? new Date(applicationDeadline) : undefined;
+    }
 
     if (screeningPolicy !== undefined) {
       job.screeningPolicy = screeningPolicy;

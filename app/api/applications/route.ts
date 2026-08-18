@@ -67,10 +67,18 @@ export async function POST(req: NextRequest) {
       job = await Job.findOne({ slug: jobIdOrSlug });
     }
 
-    if (!job || job.status === "ARCHIVED") {
+    if (!job) {
       return NextResponse.json(
-        { error: "The selected job position is no longer active or does not exist." },
+        { error: "The selected job position does not exist or has been removed." },
         { status: 404 }
+      );
+    }
+
+    const isDeadlinePassed = job.applicationDeadline && new Date(job.applicationDeadline) < new Date();
+    if (job.status !== "PUBLISHED" || isDeadlinePassed) {
+      return NextResponse.json(
+        { error: "Applications for this position are closed and no longer being accepted." },
+        { status: 403 }
       );
     }
 

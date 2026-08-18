@@ -32,6 +32,7 @@ export interface IJob extends Document {
   salaryCurrency?: string;
   description: string;
   status: JobStatus;
+  applicationDeadline?: Date;
   screeningPolicy: IScreeningPolicy;
   scoringWeights: IScoringWeights;
   currentScreeningVersion: number;
@@ -70,6 +71,7 @@ const JobSchema = new Schema<IJob>(
       enum: ["DRAFT", "PUBLISHED", "ARCHIVED"],
       default: "DRAFT",
     },
+    applicationDeadline: { type: Date },
     screeningPolicy: {
       requiredSkillsMustMatch: { type: Boolean, default: true },
       minimumExperienceMustMatch: { type: Boolean, default: true },
@@ -93,6 +95,6 @@ const JobSchema = new Schema<IJob>(
 JobSchema.index({ companyId: 1, status: 1 });
 
 export const Job: Model<IJob> =
-  mongoose.models.Job || mongoose.model<IJob>("Job", JobSchema);
+  (mongoose.models.Job as Model<IJob>) || mongoose.model<IJob>("Job", JobSchema);
 
 export default Job;

@@ -13,17 +13,37 @@ export async function GET(
   try {
     await connectToDatabase();
 
-    const job = await Job.findOne({
-      slug: params.slug.toLowerCase().trim(),
-      status: "PUBLISHED",
-    }).lean();
+    const slug = (params.slug || "").toLowerCase().trim();
+
+    // 1. Check if job exists in DB (even if draft or archived or past deadline)
+    const job = await Job.findOne({ slug }).lean();
 
     if (!job) {
       return NextResponse.json(
-        { error: "Job opening not found or no longer accepting applications." },
+        {
+          success: false,
+          notFound: true,
+          error: "404 • Position Not Found",
+          message: "This job opening does not exist or has been permanently removed by the company.",
+        },
         { status: 404 }
       );
     }
+
+    // 2. Evaluate if job timeline has expired or if job is archived/closed
+    const now = new Date();
+    const isDeadlinePassed = job.applicationDeadline && new Date(job.applicationDeadline) < now;
+    const isArchived = job.status === "ARCHIVED";
+    const isDraft = job.status === "DRAFT";
+    const isClosed = isArchived || isDraft || Boolean(isDeadlinePassed);
+
+    const closedReason = isArchived
+      ? "ARCHIVED"
+      : isDeadlinePassed
+      ? "DEADLINE_PASSED"
+      : isDraft
+      ? "DRAFT"
+      : "CLOSED";
 
     const [company, requirements] = await Promise.all([
       Company.findById(job.companyId).select("name slug logoUrl website").lean(),
@@ -33,9 +53,12 @@ export async function GET(
         .lean(),
     ]);
 
-    // Sanitized public job view (no internal weights, no internal company notes)
+    // Sanitized public job view
     return NextResponse.json({
       success: true,
+      notFound: false,
+      isClosed,
+      closedReason,
       data: {
         id: job._id.toString(),
         slug: job.slug,
@@ -48,6 +71,11 @@ export async function GET(
         salaryMax: job.salaryMax,
         salaryCurrency: job.salaryCurrency,
         description: job.description,
+        status: job.status,
+        applicationDeadline: job.applicationDeadline,
+        isClosed,
+        closedReason,
+        createdAt: job.createdAt,
         company: company
           ? {
               name: company.name,

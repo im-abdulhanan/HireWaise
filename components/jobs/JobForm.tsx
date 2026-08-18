@@ -10,6 +10,8 @@ import {
   Building,
   MapPin,
   DollarSign,
+  Calendar,
+  Clock,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ interface JobFormProps {
     salaryCurrency?: string;
     description?: string;
     status?: string;
+    applicationDeadline?: string | Date;
     screeningPolicy?: IScreeningPolicy;
     scoringWeights?: IScoringWeights;
     requirements?: RequirementItem[];
@@ -57,6 +60,11 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
   const [salaryCurrency, setSalaryCurrency] = useState(initialData?.salaryCurrency || "USD");
   const [description, setDescription] = useState(initialData?.description || "");
   const [status, setStatus] = useState(initialData?.status || "PUBLISHED");
+  const [applicationDeadline, setApplicationDeadline] = useState(
+    initialData?.applicationDeadline
+      ? new Date(initialData.applicationDeadline).toISOString().split("T")[0]
+      : ""
+  );
 
   // AI Requirements
   const [requirements, setRequirements] = useState<RequirementItem[]>(
@@ -211,6 +219,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
       salaryCurrency,
       description,
       status,
+      applicationDeadline: applicationDeadline ? new Date(applicationDeadline).toISOString() : null,
       screeningPolicy: policy,
       scoringWeights: weights,
       requirements,
@@ -378,8 +387,27 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             >
               <option value="PUBLISHED">Published (Open for Applications)</option>
               <option value="DRAFT">Draft</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="ARCHIVED">Archived (Closed)</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Job Timeline / Application Deadline (Optional)
+            </label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+              <Input
+                type="date"
+                value={applicationDeadline}
+                onChange={(e) => setApplicationDeadline(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                className="pl-9"
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1">
+              After this deadline, the public link will automatically switch to &ldquo;Applications Closed&rdquo;.
+            </p>
           </div>
         </div>
       </div>

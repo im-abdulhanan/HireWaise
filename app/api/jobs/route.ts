@@ -80,6 +80,7 @@ export async function POST(req: NextRequest) {
       salaryCurrency = "USD",
       description,
       status = "PUBLISHED",
+      applicationDeadline,
       screeningPolicy,
       scoringWeights,
       requirements = [],
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
       salaryCurrency,
       description,
       status,
+      applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : undefined,
       screeningPolicy: screeningPolicy || {
         requiredSkillsMustMatch: true,
         minimumExperienceMustMatch: true,

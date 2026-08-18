@@ -121,6 +121,21 @@ export default function JobOverviewPage() {
               <Badge variant={job.status === "PUBLISHED" ? "success" : "secondary"}>
                 {job.status.toLowerCase()}
               </Badge>
+              {job.applicationDeadline && (
+                <Badge
+                  variant={
+                    new Date(job.applicationDeadline) < new Date()
+                      ? "destructive"
+                      : "outline"
+                  }
+                  className="text-xs"
+                >
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {new Date(job.applicationDeadline) < new Date()
+                    ? `Expired on ${formatDate(job.applicationDeadline)}`
+                    : `Deadline: ${formatDate(job.applicationDeadline)}`}
+                </Badge>
+              )}
               <span className="text-xs font-mono text-slate-400">
                 v{job.currentScreeningVersion || 1}
               </span>
