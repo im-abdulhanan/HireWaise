@@ -208,24 +208,24 @@ export default function HomePage() {
       {/* 9. FAQ Section */}
       <FAQSection />
 
-      {/* 10. High-Impact Call to Action Banner */}
-      <section className="py-20 bg-blue-600 text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-          <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
+      {/* 10. High-Impact Call to Action Card */}
+      <section className="py-16 sm:py-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-neutral-800 bg-black text-white p-8 sm:p-14 text-center space-y-6 shadow-2xl">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white">
             Transform Your Candidate Screening Today
           </h2>
-          <p className="text-base sm:text-lg text-blue-100 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed">
             Stop wasting recruiter hours on keyword guesswork. Screen hundreds of candidates with explainable AI evidence and deterministic accuracy.
           </p>
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signup">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-slate-100 text-sm font-bold px-8 shadow-lg shadow-blue-900/30">
+              <Button size="lg" className="bg-white text-black hover:bg-neutral-200 text-sm font-bold px-8 shadow-md">
                 <span>Create Company Workspace</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/login">
-              <Button size="lg" variant="outline" className="border-white/40 text-white hover:bg-white/10 text-sm">
+              <Button size="lg" variant="outline" className="border-neutral-700 bg-transparent text-neutral-300 hover:bg-neutral-900 hover:text-white text-sm">
                 Sign In to Dashboard
               </Button>
             </Link>
