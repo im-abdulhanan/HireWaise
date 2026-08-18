@@ -447,24 +447,6 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
                 </>
               )}
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAnalyzeWithAI}
-              disabled={analyzingAi || !description.trim()}
-              className="gap-1.5 text-xs border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 shadow-xs"
-              title="Extract requirements from pasted description"
-            >
-              {analyzingAi ? (
-                <>
-                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent" />
-                  <span>Extracting...</span>
-                </>
-              ) : (
-                <span>Extract Reqs from Text</span>
-              )}
-            </Button>
           </div>
         </div>
 
