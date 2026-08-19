@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(cachedResponse);
     }
 
-    // 6. Extract Text from File immediately
+    // 6. Extract Text from File immediately for initial storage
     const parsedDoc = await extractTextFromDocument(fileBuffer, file.name, file.type);
 
     // 7. Store File via Storage Provider
@@ -156,11 +156,17 @@ export async function POST(req: NextRequest) {
       candidateId: candidate._id,
     });
 
+    const referenceNumber = `APP-${(application?._id || new Types.ObjectId()).toString().slice(-8).toUpperCase()}`;
+
     if (application) {
       // Re-application or update
       application.resumeId = resume._id as Types.ObjectId;
       application.screeningStatus = "PROCESSING";
+      application.currentStage = "RECEIVED";
+      application.stageProgress = 15;
+      application.referenceNumber = referenceNumber;
       application.idempotencyKey = idempotencyKey;
+      application.screeningError = undefined;
       await application.save();
     } else {
       application = await Application.create({
@@ -170,30 +176,38 @@ export async function POST(req: NextRequest) {
         resumeId: resume._id,
         status: "NEW",
         screeningStatus: "PROCESSING",
+        currentStage: "RECEIVED",
+        stageProgress: 15,
+        referenceNumber,
         idempotencyKey,
         appliedAt: new Date(),
       });
     }
 
-    // 11. Run Screening Pipeline Orchestrator (synchronous execution for candidate request)
-    const screeningOutput = await runScreeningPipeline({
-      applicationId: application._id.toString(),
+    // 11. Trigger Screening Pipeline Asynchronously (non-blocking for instant HTTP response)
+    const appIdString = application._id.toString();
+    runScreeningPipeline({ applicationId: appIdString }).catch((err) => {
+      console.error(`[ASYNC SCREENING] Background pipeline error for application ${appIdString}:`, err);
     });
 
     const responsePayload = {
       success: true,
-      message: "Application submitted and screened successfully.",
+      message: "Application received and queued for qualification screening.",
       data: {
-        applicationId: application._id.toString(),
+        applicationId: appIdString,
         candidateId: candidate._id.toString(),
         jobTitle: job.title,
-        referenceNumber: `APP-${application._id.toString().slice(-8).toUpperCase()}`,
+        referenceNumber: application.referenceNumber || referenceNumber,
+        currentStage: "RECEIVED",
+        screeningStatus: "PROCESSING",
+        progress: 15,
         submittedAt: application.appliedAt,
       },
     };
 
     recordIdempotency(idempotencyKey, responsePayload);
 
+    // Immediate 201 response with application ID so client can start real-time status polling
     return NextResponse.json(responsePayload, { status: 201 });
   } catch (error: any) {
     console.error("Public application submission error:", error);

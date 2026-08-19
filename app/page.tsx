@@ -32,7 +32,7 @@ export default function HomePage() {
       <section className="relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 bg-[#e7e5e2]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/5 px-3.5 py-1 text-xs font-semibold text-[#19191a] shadow-xs mb-8">
-            <Sparkles className="h-3.5 w-3.5 text-[#19191a]" />
+            <Sparkles className="h-3.5 w-3.5 text-[#19191a] animate-pulse" />
             <span>Autonomous AI Screening & Deterministic Matching SaaS</span>
           </div>
 
@@ -111,14 +111,14 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:col-span-6 rounded-3xl border border-slate-200 bg-slate-50 p-8 shadow-xs space-y-4">
+            <div className="lg:col-span-6 rounded-3xl border border-black/15 bg-[#dedbd6] p-8 sm:p-10 shadow-xs space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
                 The ScreenAI Solution
               </span>
-              <h3 className="text-xl font-bold text-slate-900">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Deterministic Rule Precision + AI Verification
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
                 ScreenAI bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by AI-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
               </p>
             </div>

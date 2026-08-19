@@ -23,7 +23,7 @@ export default function DashboardLayout({
 
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#e7e5e2]">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#e7e5e2]">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#19191a] border-t-transparent" />
           <p className="text-sm font-medium text-slate-600">Loading your recruiter workspace...</p>
@@ -37,15 +37,18 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#e7e5e2]">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#e7e5e2]">
+      {/* Pinned Left Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         companyName={(session.user as any)?.companyName || "Company"}
       />
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+
+      {/* Main Content Area with Fixed Top Navbar & Dedicated Scrollable View */}
+      <div className="flex flex-1 flex-col h-full min-w-0 overflow-hidden">
         <Navbar onToggleSidebar={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto min-h-0 min-w-0 p-4 sm:p-6 lg:p-8 overscroll-none">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
       </div>

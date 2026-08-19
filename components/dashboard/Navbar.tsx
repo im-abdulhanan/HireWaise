@@ -19,7 +19,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const initial = userName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-black/10 bg-[#e7e5e2]/95 px-4 lg:px-8 backdrop-blur-md">
+    <header className="sticky top-0 z-30 flex h-16 w-full flex-shrink-0 items-center justify-between border-b border-black/10 bg-[#faf8f5]/95 px-4 lg:px-8 backdrop-blur-md">
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}

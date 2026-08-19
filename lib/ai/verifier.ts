@@ -11,26 +11,37 @@ const VERIFIER_SYSTEM_PROMPT = `
 You are an expert, objective AI Evidence Verification Auditor for recruitment screening.
 Your task is to audit requirement matches against the candidate's original resume text.
 
-ANTI-HALLUCINATION & EVIDENCE RULES:
-1. Every MATCHED or PARTIAL requirement MUST be supported by explicit textual evidence in the resume.
-2. If a requirement claim cannot be found or is ambiguous in the resume, mark its status as "UNCLEAR" or "NOT_FOUND" and lower confidence.
-3. Extract the exact or near-exact quote from the resume as 'evidenceQuote' whenever possible.
+STRICT AUDIT & PER-REQUIREMENT ISOLATION RULES:
+1. Process and audit each requirement INDEPENDENTLY. Maintain the exact 'requirementId' from the input for every verified item.
+2. NEVER reuse or copy an evidence quote from one requirement to another.
+3. TYPE-SPECIFIC EVIDENCE CONSTRAINTS:
+   - SKILL Requirements (e.g. "React.js", "AI API integration", "Data Pipeline", "Node.js"):
+     * The evidenceQuote MUST contain explicit textual proof of that specific technical skill, programming language, framework, API, or project usage.
+     * NEVER cite university degrees, graduation dates, or unrelated educational information for a SKILL requirement.
+     * If the skill is not explicitly mentioned in the resume, set status: "NOT_FOUND" and evidenceQuote: "".
+   - EXPERIENCE Requirements (e.g. "4+ years software engineering experience"):
+     * The evidenceQuote MUST cite work history, job roles, or total duration of employment.
+   - EDUCATION Requirements (e.g. "Bachelor's Degree in Computer Science"):
+     * The evidenceQuote MUST cite the degree level, major/field of study, or academic institution.
+   - ACADEMIC_STATUS Requirements (e.g. "Final year or Graduate", "Graduate", "Currently enrolled"):
+     * The evidenceQuote MUST cite explicit proof of current student level (e.g. "Final Year", "4th Year", "Senior") OR explicit graduation completion (e.g. "Graduated 2024", "Completed degree").
+     * CRITICAL: An "Intermediate" or high school certificate completed in 2024 is NOT a Bachelor's Graduate.
+     * CRITICAL: A candidate currently enrolled in a Bachelor's program with no graduation proof is NOT a Graduate.
+
 4. For each requirement, produce:
+   - requirementId: Exact string ID provided in the input for this requirement
    - requirementTitle: The requirement title
+   - requirementType: Exact requirementType from input ("SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM")
+   - requirementCategory: Exact requirementCategory from input ("REQUIRED", "PREFERRED", "OPTIONAL")
    - status: "MATCHED" | "PARTIAL" | "NOT_FOUND" | "UNCLEAR"
-   - evidenceQuote: Verbatim quote from resume supporting the status (empty string if NOT_FOUND)
-   - reasoning: Clear 1-2 sentence explanation of why this status was determined
+   - evidenceQuote: Verbatim quote from resume supporting the finding (MUST be empty string if NOT_FOUND or if no relevant quote exists)
+   - reasoning: Clear 1-2 sentence explanation specific to THIS requirement only
    - confidence: Number between 0.0 and 1.0 representing confidence in this finding
+
 5. In the top-level report:
    - humanReviewRecommended: true if any critical requirement is UNCLEAR or PARTIAL, or if evidence is ambiguous
    - humanReviewReasons: array of specific issues requiring human recruiter attention
    - summary: concise summary of the evidence verification audit.
-6. ACADEMIC STATUS AUDIT RULES:
-   - For ACADEMIC_STATUS requirements (e.g. "Final year or Graduate", "Final year", "Graduate", "Currently enrolled"):
-     * MATCHED: The resume MUST contain explicit proof of being in final year (e.g. "Final Year", "4th Year", "Senior") OR explicit proof of graduation (e.g. "Graduated 2024", "Completed", degree awarded in past year).
-     * NOT_FOUND: The resume explicitly indicates a non-qualifying academic status (e.g. "1st Year", "2nd Year", "3rd Year").
-     * UNCLEAR: The resume lists a degree name (e.g. "Bachelor of Science from Virtual University") with NO graduation date, NO year level, and NO completion indicator.
-     * CRITICAL RULE: NEVER convert a Bachelor's degree into "Graduate" or "Final Year" without explicit textual evidence supporting that status.
 `.trim();
 
 export async function verifyEvidenceWithGemini(params: {
@@ -46,28 +57,31 @@ export async function verifyEvidenceWithGemini(params: {
   const wrappedDoc = wrapUntrustedDocument("RESUME_DOCUMENT", resumeRawText);
 
   const requirementsSummary = evaluatedRequirements.map((r) => ({
-    title: r.requirementTitle,
-    category: r.requirementCategory,
-    type: r.requirementType,
+    requirementId: r.jobRequirementId,
+    requirementTitle: r.requirementTitle,
+    requirementType: r.requirementType,
+    requirementCategory: r.requirementCategory,
     initialStatus: r.status,
     initialReasoning: r.reasoning,
   }));
 
   const userPrompt = `
 Verify the following requirements against the candidate's actual resume text.
+Audit each requirement independently and attach evidence quotes ONLY from relevant resume sections.
 
 CANDIDATE PROFILE SUMMARY:
 Name: ${candidateData.candidateName}
 Total Experience: ${candidateData.totalExperienceYears} years
 Extracted Skills: ${candidateData.skills.join(", ")}
+Education: ${JSON.stringify(candidateData.education || [])}
 
-REQUIREMENTS TO AUDIT:
+REQUIREMENTS TO AUDIT (MATCH EXACT REQUIREMENT IDs):
 ${JSON.stringify(requirementsSummary, null, 2)}
 
 ORIGINAL RESUME SOURCE TEXT:
 ${wrappedDoc}
 
-Audit each requirement and return the verified status, evidence quote, confidence, and human review recommendations.
+Audit each requirement and return the verified status, evidence quote, confidence, and human review recommendations with exact requirementId matching.
 `.trim();
 
   const result = await generateStructuredJSON<EvidenceVerificationReport>({
@@ -79,3 +93,5 @@ Audit each requirement and return the verified status, evidence quote, confidenc
 
   return result;
 }
+
+export default verifyEvidenceWithGemini;

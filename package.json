@@ -9,7 +9,10 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "test:phase1": "tsx tests/phase1.test.ts",
-    "test:auth": "tsx tests/auth-flow.test.ts"
+    "test:auth": "tsx tests/auth-flow.test.ts",
+    "test:apply": "tsx tests/application-submission.test.ts",
+    "test:settings": "tsx tests/job-screening-settings.test.ts",
+    "test:integrity": "tsx tests/cross-contamination-integrity.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

@@ -43,7 +43,7 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 flex w-72 flex-col border-r border-black/10 bg-[#e7e5e2] transition-transform duration-300 lg:static lg:translate-x-0",
+          "fixed top-0 bottom-0 left-0 z-50 flex h-full w-72 flex-shrink-0 flex-col border-r border-black/10 bg-[#faf8f5] transition-transform duration-300 lg:static lg:h-full lg:translate-x-0 overflow-hidden",
           isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
       >
@@ -90,8 +90,8 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
                   className={cn(
                     "group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-slate-100 text-[#19191a] shadow-xs font-semibold"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-[#19191a]"
+                      ? "bg-[#e7e5e2] text-[#19191a] shadow-xs font-semibold"
+                      : "text-slate-600 hover:bg-[#e7e5e2] hover:text-[#19191a]"
                   )}
                 >
                   <item.icon
@@ -108,7 +108,7 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
         </div>
 
         {/* Responsible AI & Human Review Disclaimer in footer */}
-        <div className="border-t border-slate-200 p-4 m-3 bg-slate-50 rounded-xl">
+        <div className="border border-black/10 p-4 m-3 bg-[#e7e5e2]/80 rounded-xl">
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
             <div>

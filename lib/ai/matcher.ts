@@ -95,24 +95,80 @@ export interface MatchCalculationResult {
 /**
  * Standard degree hierarchy rank for education level comparison.
  */
-const DEGREE_RANKS: Record<string, number> = {
+export const DEGREE_RANKS: Record<string, number> = {
   high_school: 1,
-  associate: 2,
-  bachelor: 3,
-  master: 4,
-  phd: 5,
-  doctorate: 5,
+  intermediate: 2,
+  diploma: 3,
+  bachelor: 4,
+  master: 5,
+  phd: 6,
 };
 
-function getDegreeRank(degreeText: string): number {
-  if (!degreeText) return 0;
+export function getDegreeLevelAndRank(degreeText: string): { level: string; rank: number } {
+  if (!degreeText) return { level: "UNKNOWN", rank: 0 };
   const lower = degreeText.toLowerCase();
-  if (lower.includes("phd") || lower.includes("doctor")) return DEGREE_RANKS.phd;
-  if (lower.includes("master") || lower.includes("ms") || lower.includes("mba")) return DEGREE_RANKS.master;
-  if (lower.includes("bachelor") || lower.includes("bs") || lower.includes("ba") || lower.includes("bsc") || lower.includes("b.e") || lower.includes("b.tech")) return DEGREE_RANKS.bachelor;
-  if (lower.includes("associate")) return DEGREE_RANKS.associate;
-  if (lower.includes("high school")) return DEGREE_RANKS.high_school;
-  return 2; // general college/diploma default
+
+  if (lower.includes("phd") || lower.includes("doctorate") || lower.includes("doctor of philosophy")) {
+    return { level: "PHD", rank: DEGREE_RANKS.phd };
+  }
+  if (
+    lower.includes("master") ||
+    lower.includes("ms") ||
+    lower.includes("msc") ||
+    lower.includes("mphil") ||
+    lower.includes("mba") ||
+    lower.includes("m.e") ||
+    lower.includes("m.tech")
+  ) {
+    return { level: "MASTER", rank: DEGREE_RANKS.master };
+  }
+  if (
+    lower.includes("bachelor") ||
+    lower.includes("bs") ||
+    lower.includes("ba") ||
+    lower.includes("bsc") ||
+    lower.includes("b.e") ||
+    lower.includes("b.tech") ||
+    lower.includes("undergraduate") ||
+    lower.includes("bba") ||
+    lower.includes("bcs")
+  ) {
+    return { level: "BACHELOR", rank: DEGREE_RANKS.bachelor };
+  }
+  if (
+    lower.includes("intermediate") ||
+    lower.includes("fsc") ||
+    lower.includes("ics") ||
+    lower.includes("f.sc") ||
+    lower.includes("i.cs") ||
+    lower.includes("hssc") ||
+    lower.includes("a level") ||
+    lower.includes("a-level") ||
+    lower.includes("12th grade") ||
+    lower.includes("higher secondary")
+  ) {
+    return { level: "INTERMEDIATE", rank: DEGREE_RANKS.intermediate };
+  }
+  if (
+    lower.includes("diploma") ||
+    lower.includes("associate") ||
+    lower.includes("dae")
+  ) {
+    return { level: "DIPLOMA", rank: DEGREE_RANKS.diploma };
+  }
+  if (
+    lower.includes("high school") ||
+    lower.includes("matric") ||
+    lower.includes("ssc") ||
+    lower.includes("o level") ||
+    lower.includes("o-level") ||
+    lower.includes("10th grade") ||
+    lower.includes("secondary school")
+  ) {
+    return { level: "HIGH_SCHOOL", rank: DEGREE_RANKS.high_school };
+  }
+
+  return { level: "DIPLOMA", rank: DEGREE_RANKS.diploma };
 }
 
 /**
@@ -121,7 +177,7 @@ function getDegreeRank(degreeText: string): number {
  * - "Final year"
  * - "Graduate"
  * - "Currently enrolled"
- * - "Not currently enrolled"
+ * - "Student"
  */
 export function evaluateAcademicStatusRequirement(params: {
   title: string;
@@ -144,173 +200,105 @@ export function evaluateAcademicStatusRequirement(params: {
 
   const isFinalYearReqOnly =
     !isFinalYearOrGradReq &&
-    (target.includes("final year") || target.includes("final_year") || target.includes("senior"));
+    (target.includes("final year") || target.includes("final_year") || target.includes("senior year") || target.includes("4th year"));
 
   const isGraduateReqOnly =
     !isFinalYearOrGradReq &&
     (target.includes("graduate") || target.includes("graduated") || target.includes("degree completed"));
 
   const isEnrolledReqOnly =
-    target.includes("currently enrolled") || target.includes("current student");
+    target.includes("currently enrolled") || target.includes("current student") || target.includes("student");
 
   const eduList = candidate.education || [];
-  const candidateText = [
-    candidate.summary || "",
-    ...eduList.map(
-      (e) =>
-        `${e.degree || ""} ${e.institution || ""} ${e.fieldOfStudy || ""} ${e.graduationYear || ""} ${e.academicYearLevel || ""} ${e.academicStatus || ""}`
-    ),
-  ]
-    .join(" ")
-    .toLowerCase();
 
-  // 1. Detect Explicit Graduation
-  let isGraduated = false;
+  // Analyze Candidate Academic Status and Completed University Degrees
+  let isGraduatedBachelorOrHigher = false;
+  let isGraduatedAny = false;
   let graduationQuote = "";
 
-  for (const edu of eduList) {
-    if (edu.academicStatus === "GRADUATED" || edu.isCompleted === true) {
-      isGraduated = true;
-      graduationQuote = `${edu.degree || "Degree"} from ${edu.institution || "University"}${
-        edu.graduationYear ? ` (Graduated ${edu.graduationYear})` : " (Graduated)"
-      }`;
-      break;
-    }
-    const degLower = (edu.degree || "").toLowerCase();
-    const gradYearNum = parseInt(String(edu.graduationYear || "").replace(/\D/g, ""), 10);
-    const currentYear = new Date().getFullYear();
-
-    if (
-      degLower.includes("graduat") ||
-      degLower.includes("completed") ||
-      degLower.includes("passed") ||
-      (edu.academicYearLevel && edu.academicYearLevel.toLowerCase().includes("graduat"))
-    ) {
-      isGraduated = true;
-      graduationQuote = `${edu.degree} from ${edu.institution}`;
-      break;
-    }
-
-    if (
-      gradYearNum &&
-      gradYearNum <= currentYear &&
-      !edu.isCurrent &&
-      !degLower.includes("expected")
-    ) {
-      isGraduated = true;
-      graduationQuote = `${edu.degree || "Degree"} from ${edu.institution || "University"} (Graduated ${gradYearNum})`;
-      break;
-    }
-  }
-
-  // 2. Detect Final Year
   let isFinalYear = false;
   let finalYearQuote = "";
 
+  let isEarlyEnrolled = false;
+  let earlyYearQuote = "";
+  let detectedYearName = "";
+
+  let isIntermediateOnlyCompleted = false;
+  let intermediateQuote = "";
+
+  const currentYear = new Date().getFullYear();
+
   for (const edu of eduList) {
-    if (edu.academicStatus === "FINAL_YEAR") {
-      isFinalYear = true;
-      finalYearQuote = `${edu.degree || "Degree"} from ${edu.institution || "University"} (Final Year)`;
-      break;
-    }
-    const degLower = (edu.degree || "").toLowerCase();
+    const degText = `${edu.degree || ""} ${edu.fieldOfStudy || ""}`.trim();
+    const { level, rank } = getDegreeLevelAndRank(degText);
+    const instText = edu.institution || "University";
+    const degLower = degText.toLowerCase();
     const levelLower = (edu.academicYearLevel || "").toLowerCase();
-    if (
+    const gradYearNum = parseInt(String(edu.graduationYear || "").replace(/\D/g, ""), 10);
+
+    const isExplicitCompleted =
+      edu.isCompleted === true ||
+      edu.academicStatus === "GRADUATED" ||
+      degLower.includes("completed") ||
+      degLower.includes("graduated") ||
+      degLower.includes("passed") ||
+      levelLower.includes("graduat");
+
+    const isExplicitFinalYear =
+      edu.academicStatus === "FINAL_YEAR" ||
       degLower.includes("final year") ||
       degLower.includes("4th year") ||
       degLower.includes("fourth year") ||
       degLower.includes("senior year") ||
       levelLower.includes("final") ||
-      levelLower.includes("4th")
-    ) {
-      isFinalYear = true;
-      finalYearQuote = `${edu.degree || "Degree"} from ${edu.institution || "University"} (${
-        edu.academicYearLevel || "Final Year"
-      })`;
-      break;
+      levelLower.includes("4th") ||
+      levelLower.includes("senior");
+
+    if (level === "INTERMEDIATE" || level === "HIGH_SCHOOL") {
+      if (isExplicitCompleted || (gradYearNum && gradYearNum <= currentYear && !edu.isCurrent)) {
+        isIntermediateOnlyCompleted = true;
+        intermediateQuote = `${degText || "Intermediate"} from ${instText}${
+          gradYearNum ? ` (${gradYearNum})` : ""
+        }`;
+      }
+      continue;
+    }
+
+    // University degree (Bachelor / Master / PhD)
+    if (rank >= DEGREE_RANKS.bachelor) {
+      if (isExplicitFinalYear) {
+        isFinalYear = true;
+        finalYearQuote = `${degText || "Bachelor's"} from ${instText} (Final Year)`;
+      } else if (
+        isExplicitCompleted ||
+        (gradYearNum && gradYearNum <= currentYear && !edu.isCurrent && !degLower.includes("expected"))
+      ) {
+        isGraduatedBachelorOrHigher = true;
+        isGraduatedAny = true;
+        graduationQuote = `${degText || "Bachelor's"} from ${instText}${
+          gradYearNum ? ` (Graduated ${gradYearNum})` : " (Graduated)"
+        }`;
+      } else if (
+        edu.isCurrent ||
+        edu.academicStatus === "ENROLLED" ||
+        degLower.includes("studying") ||
+        degLower.includes("enrolled") ||
+        (gradYearNum && gradYearNum > currentYear)
+      ) {
+        isEarlyEnrolled = true;
+        detectedYearName = edu.academicYearLevel || "Enrolled Student";
+        earlyYearQuote = `${degText || "Bachelor's"} at ${instText} (${detectedYearName})`;
+      }
     }
   }
 
-  if (
-    !isFinalYear &&
-    (candidateText.includes("final year") || candidateText.includes("4th year"))
-  ) {
-    isFinalYear = true;
-    finalYearQuote = "Resume confirms Final Year status";
-  }
-
-  // 3. Detect Non-Final Enrolled (1st, 2nd, 3rd year)
-  let isEarlyEnrolled = false;
-  let earlyYearQuote = "";
-  let detectedYearName = "";
-
-  for (const edu of eduList) {
-    const degLower = (edu.degree || "").toLowerCase();
-    const levelLower = (edu.academicYearLevel || "").toLowerCase();
-    const fullEduStr = `${degLower} ${levelLower}`;
-
-    if (
-      fullEduStr.includes("1st year") ||
-      fullEduStr.includes("first year") ||
-      fullEduStr.includes("freshman")
-    ) {
-      isEarlyEnrolled = true;
-      detectedYearName = "1st Year";
-      earlyYearQuote = `${edu.degree || "Degree"} — 1st Year`;
-      break;
-    } else if (
-      fullEduStr.includes("2nd year") ||
-      fullEduStr.includes("second year") ||
-      fullEduStr.includes("sophomore")
-    ) {
-      isEarlyEnrolled = true;
-      detectedYearName = "2nd Year";
-      earlyYearQuote = `${edu.degree || "Degree"} — 2nd Year`;
-      break;
-    } else if (
-      fullEduStr.includes("3rd year") ||
-      fullEduStr.includes("third year") ||
-      fullEduStr.includes("junior")
-    ) {
-      isEarlyEnrolled = true;
-      detectedYearName = "3rd Year";
-      earlyYearQuote = `${edu.degree || "Degree"} — 3rd Year`;
-      break;
-    }
-  }
-
-  if (!isEarlyEnrolled) {
-    if (candidateText.includes("1st year") || candidateText.includes("first year")) {
-      isEarlyEnrolled = true;
-      detectedYearName = "1st Year";
-      earlyYearQuote = "1st Year student";
-    } else if (candidateText.includes("2nd year") || candidateText.includes("second year")) {
-      isEarlyEnrolled = true;
-      detectedYearName = "2nd Year";
-      earlyYearQuote = "2nd Year student";
-    } else if (candidateText.includes("3rd year") || candidateText.includes("third year")) {
-      isEarlyEnrolled = true;
-      detectedYearName = "3rd Year";
-      earlyYearQuote = "3rd Year student";
-    }
-  }
-
-  // 4. Degree Mentioned But Unclear Status
-  const hasDegreeMentioned =
-    eduList.length > 0 && Boolean(eduList[0].degree || eduList[0].institution);
-  const degreeQuote = hasDegreeMentioned
-    ? `${eduList[0].degree || "Degree"}${
-        eduList[0].institution ? ` from ${eduList[0].institution}` : ""
-      }`
-    : "";
-
-  // EVALUATE AGAINST REQUIREMENT TARGET
+  // 1. "Final year or Graduate" (OR condition)
   if (isFinalYearOrGradReq) {
-    if (isGraduated) {
+    if (isGraduatedBachelorOrHigher) {
       return {
         status: "MATCHED",
         evidenceQuote: graduationQuote,
-        reasoning: `Candidate academic status confirmed as Graduate (${graduationQuote}).`,
+        reasoning: `Candidate academic status confirmed as Graduate (${graduationQuote}). Satisfies "Final year or Graduate".`,
         confidence: 0.95,
         scoreContribution: 100,
       };
@@ -319,7 +307,7 @@ export function evaluateAcademicStatusRequirement(params: {
       return {
         status: "MATCHED",
         evidenceQuote: finalYearQuote,
-        reasoning: `Candidate academic status confirmed as Final Year (${finalYearQuote}).`,
+        reasoning: `Candidate academic status confirmed as Final Year student (${finalYearQuote}). Satisfies "Final year or Graduate".`,
         confidence: 0.95,
         scoreContribution: 100,
       };
@@ -328,16 +316,26 @@ export function evaluateAcademicStatusRequirement(params: {
       return {
         status: "NOT_FOUND",
         evidenceQuote: earlyYearQuote,
-        reasoning: `Candidate is in ${detectedYearName}, which does not meet the requirement of Final Year or Graduate.`,
+        reasoning: `Candidate is currently enrolled (${earlyYearQuote}) but not in final year and has not yet graduated.`,
         confidence: 0.92,
         scoreContribution: 0,
       };
     }
-    if (hasDegreeMentioned) {
+    if (isIntermediateOnlyCompleted) {
+      return {
+        status: "NOT_FOUND",
+        evidenceQuote: intermediateQuote,
+        reasoning: `Candidate has completed ${intermediateQuote}, but has not reached final year or graduated from a university degree.`,
+        confidence: 0.9,
+        scoreContribution: 0,
+      };
+    }
+    if (eduList.length > 0) {
+      const sampleDegree = `${eduList[0].degree || "Degree"} from ${eduList[0].institution || "University"}`;
       return {
         status: "UNCLEAR",
-        evidenceQuote: degreeQuote,
-        reasoning: `Resume lists "${degreeQuote}", but does not provide completion date, year level, or graduation status to verify if candidate is in final year or already graduated.`,
+        evidenceQuote: sampleDegree,
+        reasoning: `Resume mentions "${sampleDegree}", but graduation date or year level is not specified to verify final year or graduate status.`,
         confidence: 0.7,
         scoreContribution: 40,
       };
@@ -351,17 +349,18 @@ export function evaluateAcademicStatusRequirement(params: {
     };
   }
 
+  // 2. "Final Year" only
   if (isFinalYearReqOnly) {
     if (isFinalYear) {
       return {
         status: "MATCHED",
         evidenceQuote: finalYearQuote,
-        reasoning: `Candidate academic status confirmed as Final Year (${finalYearQuote}).`,
+        reasoning: `Candidate confirmed as Final Year student (${finalYearQuote}).`,
         confidence: 0.95,
         scoreContribution: 100,
       };
     }
-    if (isGraduated) {
+    if (isGraduatedBachelorOrHigher) {
       return {
         status: "NOT_FOUND",
         evidenceQuote: graduationQuote,
@@ -374,28 +373,20 @@ export function evaluateAcademicStatusRequirement(params: {
       return {
         status: "NOT_FOUND",
         evidenceQuote: earlyYearQuote,
-        reasoning: `Candidate is in ${detectedYearName}, not final year.`,
+        reasoning: `Candidate is currently enrolled (${earlyYearQuote}), but not in final year.`,
         confidence: 0.92,
         scoreContribution: 0,
       };
     }
-    if (hasDegreeMentioned) {
-      return {
-        status: "UNCLEAR",
-        evidenceQuote: degreeQuote,
-        reasoning: `Resume lists "${degreeQuote}" without specifying final year status.`,
-        confidence: 0.7,
-        scoreContribution: 40,
-      };
-    }
   }
 
+  // 3. "Graduate" only
   if (isGraduateReqOnly) {
-    if (isGraduated) {
+    if (isGraduatedBachelorOrHigher) {
       return {
         status: "MATCHED",
         evidenceQuote: graduationQuote,
-        reasoning: `Candidate confirmed as Graduate (${graduationQuote}).`,
+        reasoning: `Candidate confirmed as University Graduate (${graduationQuote}).`,
         confidence: 0.95,
         scoreContribution: 100,
       };
@@ -411,46 +402,48 @@ export function evaluateAcademicStatusRequirement(params: {
         scoreContribution: 0,
       };
     }
-    if (hasDegreeMentioned) {
+    if (isIntermediateOnlyCompleted) {
       return {
-        status: "UNCLEAR",
-        evidenceQuote: degreeQuote,
-        reasoning: `Resume mentions "${degreeQuote}" without explicit completion date or graduation confirmation.`,
-        confidence: 0.7,
-        scoreContribution: 40,
+        status: "NOT_FOUND",
+        evidenceQuote: intermediateQuote,
+        reasoning: `Intermediate completion (${intermediateQuote}) does not qualify as a university degree Graduate.`,
+        confidence: 0.95,
+        scoreContribution: 0,
       };
     }
   }
 
+  // 4. "Currently enrolled" / "Student"
   if (isEnrolledReqOnly) {
     if (isFinalYear || isEarlyEnrolled) {
       return {
         status: "MATCHED",
         evidenceQuote: isFinalYear ? finalYearQuote : earlyYearQuote,
         reasoning: `Candidate is currently enrolled (${
-          isFinalYear ? "Final Year" : detectedYearName
+          isFinalYear ? finalYearQuote : earlyYearQuote
         }).`,
         confidence: 0.95,
         scoreContribution: 100,
       };
     }
-    if (isGraduated) {
+    if (isGraduatedBachelorOrHigher) {
       return {
         status: "NOT_FOUND",
         evidenceQuote: graduationQuote,
-        reasoning: "Candidate is a graduate, not currently enrolled.",
+        reasoning: "Candidate is a graduate and not currently enrolled as a student.",
         confidence: 0.9,
         scoreContribution: 0,
       };
     }
   }
 
-  // Fallback for general academic status
-  if (hasDegreeMentioned) {
+  // Fallback
+  if (eduList.length > 0) {
+    const sampleDegree = `${eduList[0].degree || "Degree"} from ${eduList[0].institution || "University"}`;
     return {
       status: "UNCLEAR",
-      evidenceQuote: degreeQuote,
-      reasoning: `Resume mentions "${degreeQuote}", but academic status details are insufficient for "${title}".`,
+      evidenceQuote: sampleDegree,
+      reasoning: `Resume mentions "${sampleDegree}", but academic status details are insufficient for "${title}".`,
       confidence: 0.7,
       scoreContribution: 40,
     };
@@ -467,6 +460,7 @@ export function evaluateAcademicStatusRequirement(params: {
 
 /**
  * Deterministic matching engine that compares structured candidate data against job requirements.
+ * CRITICAL RULE: Canonical JobRequirement type and category from MongoDB are the absolute source of truth.
  */
 export function calculateDeterministicMatch(params: {
   candidate: CandidateResumeExtraction;
@@ -492,7 +486,8 @@ export function calculateDeterministicMatch(params: {
 
   // Build normalized skill lookup set for candidate
   const candidateSkillsSet = new Set<string>();
-  (candidate.skills || []).forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
+  const rawSkillsList = candidate.skills || [];
+  rawSkillsList.forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
   (candidate.normalizedSkills || []).forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
   (candidate.experience || []).forEach((exp) => {
     (exp.skillsUsed || []).forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
@@ -508,20 +503,19 @@ export function calculateDeterministicMatch(params: {
   let requiredExpYears = 0;
   const candidateExpYears = candidate.totalExperienceYears || 0;
 
-  let requiredEducationPresent = false;
-  let educationMatched = false;
-
   let otherTotal = 0;
   let otherMatched = 0;
 
   const humanReviewReasons: string[] = [];
 
   for (const req of requirements) {
-    const title = req.title;
-    const category = req.category;
-    const type = req.type;
-    const normKey = req.normalizedKey ? normalizeSkill(req.normalizedKey) : normalizeSkill(title);
+    // CANONICAL FIELDS FROM MONGODB JOB REQUIREMENT
     const reqId = req._id ? req._id.toString() : (req.id || `req-${Math.random()}`);
+    const title = req.title;
+    const category: "REQUIRED" | "PREFERRED" | "OPTIONAL" = req.category || "REQUIRED";
+    const type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM" =
+      req.type || "SKILL";
+    const normKey = req.normalizedKey ? normalizeSkill(req.normalizedKey) : normalizeSkill(title);
 
     let status: MatchStatus = "NOT_FOUND";
     let reasoning = "";
@@ -529,18 +523,7 @@ export function calculateDeterministicMatch(params: {
     let confidence = 0.9;
     let scoreContribution = 0;
 
-    // Check if this requirement is an Academic Status requirement (either by type or title keywords)
-    const isAcademicStatusType =
-      type === "ACADEMIC_STATUS" ||
-      (type === "EDUCATION" &&
-        (title.toLowerCase().includes("final year") ||
-          title.toLowerCase().includes("graduate") ||
-          title.toLowerCase().includes("enrolled") ||
-          title.toLowerCase().includes("student") ||
-          normKey.includes("final_year") ||
-          normKey.includes("academic_status")));
-
-    if (isAcademicStatusType) {
+    if (type === "ACADEMIC_STATUS") {
       const evalRes = evaluateAcademicStatusRequirement({
         title,
         normalizedKey: normKey,
@@ -552,41 +535,39 @@ export function calculateDeterministicMatch(params: {
       confidence = evalRes.confidence;
       scoreContribution = evalRes.scoreContribution;
 
-      if (category === "REQUIRED") {
-        requiredEducationPresent = true;
-        if (status === "MATCHED") {
-          educationMatched = true;
-        } else if (status === "UNCLEAR") {
-          humanReviewReasons.push(
-            `Academic status is unclear from resume evidence: "${title}".`
-          );
-        }
+      if (category === "REQUIRED" && status === "UNCLEAR") {
+        humanReviewReasons.push(`Academic status is unclear from resume evidence: "${title}".`);
       }
     } else if (type === "SKILL") {
       const isRequired = category === "REQUIRED";
       if (isRequired) requiredSkillsTotal++;
       else if (category === "PREFERRED") preferredSkillsTotal++;
 
-      // Check candidate skills
-      const hasExactSkill =
-        candidateSkillsSet.has(normKey) ||
-        Array.from(candidateSkillsSet).some((s) => s.includes(normKey) || normKey.includes(s));
+      // Check candidate skills profile
+      const exactSkillFound = rawSkillsList.find(
+        (s) => normalizeSkill(s) === normKey || normalizeSkill(s).includes(normKey) || normKey.includes(normalizeSkill(s))
+      );
+
+      const hasExactSkill = Boolean(exactSkillFound) || candidateSkillsSet.has(normKey);
 
       if (hasExactSkill) {
         status = "MATCHED";
-        reasoning = `Found direct match for skill "${title}" in candidate skills and experience profile.`;
+        const matchedSkillName = exactSkillFound || title;
+        evidenceQuote = `Skill verified in candidate profile: "${matchedSkillName}"`;
+        reasoning = `Found direct match for skill "${title}" in candidate technical profile.`;
         confidence = 0.95;
         scoreContribution = 100;
         if (isRequired) requiredSkillsMatched++;
         else if (category === "PREFERRED") preferredSkillsMatched++;
       } else {
         // Look through experience descriptions for partial mentions
-        const matchingExp = candidate.experience.find((exp) =>
-          exp.description.toLowerCase().includes(normKey)
+        const matchingExp = (candidate.experience || []).find((exp) =>
+          (exp.description || "").toLowerCase().includes(normKey)
         );
         if (matchingExp) {
           status = "PARTIAL";
-          evidenceQuote = matchingExp.description.slice(0, 150);
+          const snippet = matchingExp.description.slice(0, 140).trim();
+          evidenceQuote = `"${snippet}..." (${matchingExp.jobTitle || "Role"} at ${matchingExp.company || "Company"})`;
           reasoning = `Skill "${title}" mentioned in project/experience description at ${matchingExp.company}.`;
           confidence = 0.75;
           scoreContribution = 60;
@@ -594,7 +575,8 @@ export function calculateDeterministicMatch(params: {
           else if (category === "PREFERRED") preferredSkillsMatched += 0.6;
         } else {
           status = "NOT_FOUND";
-          reasoning = `No explicit mention of "${title}" found in candidate resume.`;
+          evidenceQuote = "";
+          reasoning = `No mention of "${title}" found in candidate resume.`;
           confidence = 0.9;
           scoreContribution = 0;
         }
@@ -605,7 +587,7 @@ export function calculateDeterministicMatch(params: {
 
       if (candidateExpYears >= minYears) {
         status = "MATCHED";
-        reasoning = `Candidate has ${candidateExpYears} years of experience, exceeding the required ${minYears} years.`;
+        reasoning = `Candidate has ${candidateExpYears} years of experience, meeting or exceeding the required ${minYears} years.`;
         evidenceQuote = `Total detected experience: ${candidateExpYears} years across ${
           candidate.experience?.length || 0
         } roles.`;
@@ -623,23 +605,22 @@ export function calculateDeterministicMatch(params: {
       } else {
         status = "NOT_FOUND";
         reasoning = `Candidate has ${candidateExpYears} years of experience, below the required ${minYears} years.`;
+        evidenceQuote = `Total detected experience: ${candidateExpYears} years.`;
         confidence = 0.9;
         scoreContribution = Math.round((candidateExpYears / minYears) * 100);
       }
     } else if (type === "EDUCATION") {
-      requiredEducationPresent = true;
-      const targetRank = getDegreeRank(title);
-      const candidateHighestRank = getDegreeRank(
-        candidate.highestDegree ||
-          (candidate.education && candidate.education[0]?.degree) ||
-          ""
-      );
+      const targetRank = getDegreeLevelAndRank(title).rank;
+      const highestCandidate = candidate.highestDegree
+        ? getDegreeLevelAndRank(candidate.highestDegree)
+        : candidate.education && candidate.education[0]?.degree
+        ? getDegreeLevelAndRank(candidate.education[0].degree)
+        : { level: "UNKNOWN", rank: 0 };
 
-      if (candidateHighestRank >= targetRank && candidateHighestRank > 0) {
+      if (highestCandidate.rank >= targetRank && highestCandidate.rank > 0) {
         status = "MATCHED";
-        educationMatched = true;
-        const candidateDeg = candidate.education[0]?.degree || candidate.highestDegree || "Degree";
-        const candidateInst = candidate.education[0]?.institution || "University";
+        const candidateDeg = candidate.education?.[0]?.degree || candidate.highestDegree || "Degree";
+        const candidateInst = candidate.education?.[0]?.institution || "University";
         evidenceQuote = `${candidateDeg} from ${candidateInst}`;
         reasoning = `Candidate holds a qualifying degree (${candidateDeg}) satisfying the degree-level requirement.`;
         confidence = 0.92;
@@ -653,6 +634,7 @@ export function calculateDeterministicMatch(params: {
         scoreContribution = 60;
       } else {
         status = "NOT_FOUND";
+        evidenceQuote = "";
         reasoning = `No matching degree found for "${title}".`;
         confidence = 0.85;
         scoreContribution = 0;
@@ -661,7 +643,7 @@ export function calculateDeterministicMatch(params: {
       // CERTIFICATION or CUSTOM
       otherTotal++;
       const normTitle = normalizeSkill(title);
-      const certFound = (candidate.certifications || []).some(
+      const certFound = (candidate.certifications || []).find(
         (c) =>
           normalizeSkill(c.name).includes(normTitle) ||
           normTitle.includes(normalizeSkill(c.name))
@@ -670,22 +652,25 @@ export function calculateDeterministicMatch(params: {
       if (certFound) {
         status = "MATCHED";
         otherMatched++;
-        reasoning = `Candidate holds verified certification/qualification matching "${title}".`;
+        evidenceQuote = `Certification: ${certFound.name}${certFound.issuer ? ` by ${certFound.issuer}` : ""}`;
+        reasoning = `Candidate holds verified certification matching "${title}".`;
         confidence = 0.95;
         scoreContribution = 100;
       } else {
         status = "NOT_FOUND";
-        reasoning = `No evidence found for "${title}".`;
+        evidenceQuote = "";
+        reasoning = `No certification or custom evidence found for "${title}".`;
         confidence = 0.85;
         scoreContribution = 0;
       }
     }
 
+    // PUSH STRICT CANONICAL DATA
     evaluatedRequirements.push({
       jobRequirementId: reqId,
       requirementTitle: title,
       requirementCategory: category,
-      requirementType: isAcademicStatusType ? "ACADEMIC_STATUS" : type,
+      requirementType: type,
       status,
       evidenceQuote,
       reasoning,
@@ -705,13 +690,13 @@ export function calculateDeterministicMatch(params: {
       ? Math.min(100, Math.round((candidateExpYears / requiredExpYears) * 100))
       : 100;
 
-  const educationScore = requiredEducationPresent
-    ? educationMatched
-      ? 100
-      : candidate.education?.length > 0
-      ? 60
-      : 0
-    : 100;
+  const educationReqs = evaluatedRequirements.filter((r) => r.requirementType === "EDUCATION" || r.requirementType === "ACADEMIC_STATUS");
+  const educationScore =
+    educationReqs.length > 0
+      ? Math.round(
+          educationReqs.reduce((acc, r) => acc + r.scoreContribution, 0) / educationReqs.length
+        )
+      : 100;
 
   const preferredSkillsScore =
     preferredSkillsTotal > 0
@@ -719,77 +704,93 @@ export function calculateDeterministicMatch(params: {
       : 100;
 
   const otherScore =
-    otherTotal > 0 ? Math.min(100, Math.round((otherMatched / otherTotal) * 100)) : 100;
+    otherTotal > 0
+      ? Math.min(100, Math.round((otherMatched / otherTotal) * 100))
+      : 100;
 
-  // Calculate Weighted Overall Score
+  // Calculate Overall Weighted Score
   const totalWeight =
-    weights.requiredSkillsWeight +
-    weights.experienceWeight +
-    weights.educationWeight +
-    weights.preferredSkillsWeight +
-    weights.otherWeight;
+    (weights.requiredSkillsWeight || 40) +
+    (weights.experienceWeight || 25) +
+    (weights.educationWeight || 15) +
+    (weights.preferredSkillsWeight || 10) +
+    (weights.otherWeight || 10);
 
   const weightedSum =
-    skillsScore * weights.requiredSkillsWeight +
-    experienceScore * weights.experienceWeight +
-    educationScore * weights.educationWeight +
-    preferredSkillsScore * weights.preferredSkillsWeight +
-    otherScore * weights.otherWeight;
+    skillsScore * (weights.requiredSkillsWeight || 40) +
+    experienceScore * (weights.experienceWeight || 25) +
+    educationScore * (weights.educationWeight || 15) +
+    preferredSkillsScore * (weights.preferredSkillsWeight || 10) +
+    otherScore * (weights.otherWeight || 10);
 
   const overallScore = Math.min(100, Math.max(0, Math.round(weightedSum / (totalWeight || 100))));
 
-  // Evaluate Screening Policy & Category
-  let category: ScreeningCategory = "POSSIBLE_MATCH";
-  let humanReviewRecommended = false;
+  // Evaluate Deterministic Screening Policy Gates
+  let meetsPolicy = true;
 
-  const allRequiredSkillsPassed = requiredSkillsTotal === 0 || requiredSkillsMatched >= requiredSkillsTotal * 0.85;
-  const experiencePassed = requiredExpYears === 0 || candidateExpYears >= requiredExpYears;
-
-  if (policy.requiredSkillsMustMatch && !allRequiredSkillsPassed) {
-    if (requiredSkillsMatched < requiredSkillsTotal * 0.5) {
-      category = "DOES_NOT_MEET_STATED_REQUIREMENTS";
-    } else {
-      category = "POSSIBLE_MATCH";
-      humanReviewReasons.push("Candidate is missing one or more required skills.");
+  if (policy.requiredSkillsMustMatch && requiredSkillsTotal > 0) {
+    const requiredSkillsMatchRatio = requiredSkillsMatched / requiredSkillsTotal;
+    if (requiredSkillsMatchRatio < 0.5) {
+      meetsPolicy = false;
+      humanReviewReasons.push(
+        `Candidate matched only ${requiredSkillsMatched}/${requiredSkillsTotal} required skills (< 50%).`
+      );
     }
-  } else if (policy.minimumExperienceMustMatch && candidateExpYears < requiredExpYears * 0.7) {
+  }
+
+  if (policy.minimumExperienceMustMatch && requiredExpYears > 0) {
+    if (candidateExpYears < requiredExpYears * 0.7) {
+      meetsPolicy = false;
+      humanReviewReasons.push(
+        `Experience shortfall (${candidateExpYears} yrs vs ${requiredExpYears} yrs required).`
+      );
+    }
+  }
+
+  if (policy.educationRequired && educationReqs.length > 0) {
+    const hasUnmetRequiredEdu = educationReqs.some(
+      (r) => r.requirementCategory === "REQUIRED" && r.status !== "MATCHED"
+    );
+    if (hasUnmetRequiredEdu) {
+      meetsPolicy = false;
+      humanReviewReasons.push("Candidate did not satisfy required degree or academic status.");
+    }
+  }
+
+  // Determine Categorization
+  let category: ScreeningCategory = "POSSIBLE_MATCH";
+
+  if (!meetsPolicy || overallScore < 50) {
     category = "DOES_NOT_MEET_STATED_REQUIREMENTS";
-  } else if (overallScore >= 80 && allRequiredSkillsPassed && experiencePassed) {
+  } else if (overallScore >= 80) {
     category = "STRONG_MATCH";
-  } else if (overallScore >= 55) {
+  } else {
     category = "POSSIBLE_MATCH";
-  } else {
-    category = "DOES_NOT_MEET_STATED_REQUIREMENTS";
   }
 
-  if (overallScore < policy.humanReviewBelowScore && category === "POSSIBLE_MATCH") {
-    humanReviewRecommended = true;
-    humanReviewReasons.push(`Score (${overallScore}) is below human review threshold (${policy.humanReviewBelowScore}).`);
-  }
+  // Determine Human Review Recommendation
+  const humanReviewThreshold = policy.humanReviewBelowScore || 75;
+  const humanReviewRecommended =
+    overallScore < humanReviewThreshold || humanReviewReasons.length > 0;
 
-  let summary = "";
-  if (category === "STRONG_MATCH") {
-    summary = `Strong match with a score of ${overallScore}/100. Meets ${Math.round(requiredSkillsMatched)}/${requiredSkillsTotal} required skills and holds ${candidateExpYears} yrs experience (required: ${requiredExpYears} yrs).`;
-  } else if (category === "POSSIBLE_MATCH") {
-    summary = `Possible match with a score of ${overallScore}/100. Meets ${Math.round(requiredSkillsMatched)}/${requiredSkillsTotal} required skills. Human review recommended.`;
-  } else {
-    summary = `Does not meet stated requirements (Score: ${overallScore}/100). Meets ${Math.round(requiredSkillsMatched)}/${requiredSkillsTotal} required skills and ${candidateExpYears} yrs experience.`;
-  }
+  const scoreBreakdown: IScoreBreakdown = {
+    skillsScore,
+    experienceScore,
+    educationScore,
+    preferredSkillsScore,
+    otherScore,
+  };
+
+  const summary = `Candidate scored ${overallScore}/100 (${category.replace("_", " ")}). Matched ${requiredSkillsMatched}/${requiredSkillsTotal} required skills, ${candidateExpYears} yrs experience (required: ${requiredExpYears} yrs).`;
 
   return {
     overallScore,
     category,
     summary,
-    confidence: 0.9,
+    confidence: 0.92,
     humanReviewRecommended,
     humanReviewReasons,
-    scoreBreakdown: {
-      skillsScore,
-      experienceScore,
-      educationScore,
-      preferredSkillsScore,
-      otherScore,
-    },
+    scoreBreakdown,
     matchedRequirements: evaluatedRequirements,
     matchedRequiredSkillsCount: Math.round(requiredSkillsMatched),
     totalRequiredSkillsCount: requiredSkillsTotal,
@@ -799,3 +800,5 @@ export function calculateDeterministicMatch(params: {
     requiredExperienceYears: requiredExpYears,
   };
 }
+
+export default calculateDeterministicMatch;

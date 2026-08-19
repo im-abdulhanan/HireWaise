@@ -169,7 +169,14 @@ export type CandidateResumeExtraction = z.infer<typeof CandidateResumeExtraction
  * Requirement Verification Schema
  */
 export const SingleRequirementVerificationSchema = z.object({
+  requirementId: z.string().default(""),
   requirementTitle: z.string(),
+  requirementType: z
+    .enum(["SKILL", "EXPERIENCE", "EDUCATION", "ACADEMIC_STATUS", "CERTIFICATION", "CUSTOM"])
+    .default("SKILL"),
+  requirementCategory: z
+    .enum(["REQUIRED", "PREFERRED", "OPTIONAL"])
+    .default("REQUIRED"),
   status: z.enum(["MATCHED", "PARTIAL", "NOT_FOUND", "UNCLEAR"]),
   evidenceQuote: z.string().default(""),
   reasoning: z.string(),
@@ -190,13 +197,34 @@ export const EvidenceVerificationReportSchema = z.preprocess(
         ...val,
         verifiedRequirements: Array.isArray(list)
           ? list.map((item: any) => ({
+              requirementId: String(
+                item.requirementId || item.id || item.jobRequirementId || ""
+              ),
               requirementTitle:
                 item.requirementTitle || item.title || item.name || "Requirement",
+              requirementType: [
+                "SKILL",
+                "EXPERIENCE",
+                "EDUCATION",
+                "ACADEMIC_STATUS",
+                "CERTIFICATION",
+                "CUSTOM",
+              ].includes(item.requirementType)
+                ? item.requirementType
+                : "SKILL",
+              requirementCategory: [
+                "REQUIRED",
+                "PREFERRED",
+                "OPTIONAL",
+              ].includes(item.requirementCategory)
+                ? item.requirementCategory
+                : "REQUIRED",
               status: ["MATCHED", "PARTIAL", "NOT_FOUND", "UNCLEAR"].includes(item.status)
                 ? item.status
                 : "MATCHED",
               evidenceQuote: item.evidenceQuote || item.quote || item.evidence || "",
-              reasoning: item.reasoning || item.explanation || "Verified against resume evidence.",
+              reasoning:
+                item.reasoning || item.explanation || "Verified against resume evidence.",
               confidence: typeof item.confidence === "number" ? item.confidence : 0.9,
               verifiedByAi: true,
             }))

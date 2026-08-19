@@ -16,6 +16,7 @@ import { Types } from "mongoose";
 export interface ScreeningPipelineOptions {
   applicationId: string;
   skipVerificationAi?: boolean; // Can be used for quick local dev/tests if needed
+  overrideCandidateData?: import("./schemas").CandidateResumeExtraction;
 }
 
 export interface ScreeningPipelineResult {
@@ -31,11 +32,12 @@ export interface ScreeningPipelineResult {
 /**
  * Multi-stage candidate screening pipeline orchestrator.
  * Designed to execute cleanly in Next.js Server Actions or asynchronous background workers.
+ * Persists real-time stage updates to MongoDB for deterministic frontend polling.
  */
 export async function runScreeningPipeline(
   options: ScreeningPipelineOptions
 ): Promise<ScreeningPipelineResult> {
-  const { applicationId, skipVerificationAi = false } = options;
+  const { applicationId, skipVerificationAi = false, overrideCandidateData } = options;
   const startTime = Date.now();
 
   console.log(`\n======================================================`);
@@ -55,10 +57,13 @@ export async function runScreeningPipeline(
     throw new Error(`Application ${applicationId} not found.`);
   }
 
-  // Update status to PROCESSING
-  application.screeningStatus = "PROCESSING";
-  application.screeningError = undefined;
-  await application.save();
+  // Initial stage update: RECEIVED
+  await Application.findByIdAndUpdate(applicationId, {
+    currentStage: "RECEIVED",
+    stageProgress: 15,
+    screeningStatus: "PROCESSING",
+    screeningError: undefined,
+  });
 
   try {
     const [job, resume, requirements] = await Promise.all([
@@ -70,8 +75,14 @@ export async function runScreeningPipeline(
     if (!job) throw new Error(`Job ${application.jobId} not found.`);
     if (!resume) throw new Error(`Resume ${application.resumeId} not found.`);
 
-    // STAGE 1: Extract Document Text if not already parsed
+    // STAGE 1: FILE_PROCESSING (Extract Document Text if not already parsed)
     console.log(`[SCREENING PIPELINE] FILE EXTRACTION START`);
+    await Application.findByIdAndUpdate(applicationId, {
+      currentStage: "FILE_PROCESSING",
+      stageProgress: 30,
+      screeningStatus: "PROCESSING",
+    });
+
     let rawText = resume.parsedText;
     if (!rawText || rawText.trim().length < 20) {
       const storage = getStorageProvider();
@@ -94,16 +105,28 @@ export async function runScreeningPipeline(
       throw new Error("Resume document contains insufficient readable text.");
     }
 
-    // STAGE 2: Gemini Structured Candidate Extraction
+    // STAGE 2: RESUME_ANALYSIS (Gemini Structured Candidate Extraction)
     console.log(`[SCREENING PIPELINE] GEMINI RESUME ANALYSIS START`);
-    const extractionResult = await parseResumeWithGemini(rawText);
-    const candidateData = extractionResult.data;
+    await Application.findByIdAndUpdate(applicationId, {
+      currentStage: "RESUME_ANALYSIS",
+      stageProgress: 55,
+      screeningStatus: "PROCESSING",
+    });
 
-    totalInputTokens += extractionResult.telemetry.inputTokens;
-    totalOutputTokens += extractionResult.telemetry.outputTokens;
-    retryCount += extractionResult.telemetry.retryCount;
-    modelUsed = extractionResult.telemetry.model;
-    console.log(`[SCREENING PIPELINE] GEMINI RESUME ANALYSIS COMPLETE - Model: ${modelUsed}`);
+    let candidateData: import("./schemas").CandidateResumeExtraction;
+    if (overrideCandidateData) {
+      candidateData = overrideCandidateData;
+      console.log(`[SCREENING PIPELINE] Using provided candidate extraction data.`);
+    } else {
+      const extractionResult = await parseResumeWithGemini(rawText);
+      candidateData = extractionResult.data;
+
+      totalInputTokens += extractionResult.telemetry.inputTokens;
+      totalOutputTokens += extractionResult.telemetry.outputTokens;
+      retryCount += extractionResult.telemetry.retryCount;
+      modelUsed = extractionResult.telemetry.model;
+      console.log(`[SCREENING PIPELINE] GEMINI RESUME ANALYSIS COMPLETE - Model: ${modelUsed}`);
+    }
 
     // Create or update Candidate record
     let candidate = await Candidate.findById(application.candidateId);
@@ -140,8 +163,14 @@ export async function runScreeningPipeline(
       await resume.save();
     }
 
-    // STAGE 3: Deterministic Rule Matching
+    // STAGE 3: REQUIREMENT_MATCHING (Deterministic Rule Matching)
     console.log(`[SCREENING PIPELINE] MATCHING START - Requirements Count: ${requirements.length}`);
+    await Application.findByIdAndUpdate(applicationId, {
+      currentStage: "REQUIREMENT_MATCHING",
+      stageProgress: 75,
+      screeningStatus: "PROCESSING",
+    });
+
     const deterministicMatch = calculateDeterministicMatch({
       candidate: candidateData,
       requirements,
@@ -158,9 +187,15 @@ export async function runScreeningPipeline(
     let humanReviewRecommended = deterministicMatch.humanReviewRecommended;
     let humanReviewReasons = [...deterministicMatch.humanReviewReasons];
 
-    // STAGE 4: Gemini Evidence Verification (Zero-Hallucination Audit)
+    // STAGE 4: EVIDENCE_VERIFICATION (Gemini Evidence Verification & Audit)
     if (!skipVerificationAi && requirements.length > 0) {
       console.log(`[SCREENING PIPELINE] VERIFICATION START`);
+      await Application.findByIdAndUpdate(applicationId, {
+        currentStage: "EVIDENCE_VERIFICATION",
+        stageProgress: 90,
+        screeningStatus: "PROCESSING",
+      });
+
       try {
         const verifyResult = await verifyEvidenceWithGemini({
           resumeRawText: rawText,
@@ -179,17 +214,41 @@ export async function runScreeningPipeline(
           humanReviewReasons.push(...auditReport.humanReviewReasons);
         }
 
-        // Merge AI verified evidence quotes and statuses
+        // Merge AI verified evidence quotes and statuses STRICTLY BY REQUIREMENT ID
         finalEvaluatedRequirements = finalEvaluatedRequirements.map((r) => {
-          const auditItem = auditReport.verifiedRequirements.find(
-            (v) => v.requirementTitle.toLowerCase() === r.requirementTitle.toLowerCase()
-          );
+          const auditItem =
+            auditReport.verifiedRequirements.find(
+              (v) => v.requirementId && v.requirementId === r.jobRequirementId
+            ) ||
+            auditReport.verifiedRequirements.find(
+              (v) =>
+                v.requirementTitle &&
+                v.requirementTitle.toLowerCase() === r.requirementTitle.toLowerCase()
+            );
 
           if (auditItem) {
+            // Anti-Cross-Contamination Guard:
+            // Ensure evidenceQuote is actually relevant to this requirement type
+            let cleanEvidence = auditItem.evidenceQuote || r.evidenceQuote;
+            if (r.requirementType === "SKILL") {
+              const lowerEvidence = (cleanEvidence || "").toLowerCase();
+              const lowerTitle = r.requirementTitle.toLowerCase();
+              // If the evidence quote is solely an education/degree quote with no mention of the skill, discard it
+              if (
+                (lowerEvidence.includes("bachelor") ||
+                  lowerEvidence.includes("degree") ||
+                  lowerEvidence.includes("university") ||
+                  lowerEvidence.includes("intermediate")) &&
+                !lowerEvidence.includes(lowerTitle)
+              ) {
+                cleanEvidence = r.evidenceQuote; // Keep clean deterministic skill evidence
+              }
+            }
+
             return {
               ...r,
               status: auditItem.status,
-              evidenceQuote: auditItem.evidenceQuote || r.evidenceQuote,
+              evidenceQuote: cleanEvidence,
               reasoning: auditItem.reasoning || r.reasoning,
               confidence: auditItem.confidence,
               verifiedByAi: true,
@@ -199,7 +258,10 @@ export async function runScreeningPipeline(
         });
         console.log(`[SCREENING PIPELINE] VERIFICATION COMPLETE`);
       } catch (verifyErr: any) {
-        console.warn(`[SCREENING PIPELINE] Verification step warning (using deterministic evidence):`, verifyErr?.message);
+        console.warn(
+          `[SCREENING PIPELINE] Verification step warning (using deterministic evidence):`,
+          verifyErr?.message
+        );
       }
     }
 
@@ -214,7 +276,10 @@ export async function runScreeningPipeline(
 
     // Delete any existing ScreeningResult for this application (e.g. re-screening)
     await ScreeningResult.deleteMany({ applicationId: application._id });
-    await ScreeningRequirementResult.deleteMany({ candidateId: candidate._id, jobId: job._id });
+    await ScreeningRequirementResult.deleteMany({
+      candidateId: candidate._id,
+      jobId: job._id,
+    });
 
     // STAGE 6: Persist ScreeningResult
     const screeningResult = await ScreeningResult.create({
@@ -236,7 +301,9 @@ export async function runScreeningPipeline(
       detectedExperienceYears: deterministicMatch.detectedExperienceYears,
       requiredExperienceYears: deterministicMatch.requiredExperienceYears,
       screeningVersion: job.currentScreeningVersion || 1,
-      jobRequirementsSnapshot: requirements.map((r) => r.toObject ? r.toObject() : r),
+      jobRequirementsSnapshot: requirements.map((r) =>
+        r.toObject ? r.toObject() : r
+      ),
       scoringWeightsSnapshot: job.scoringWeights,
       screeningPolicySnapshot: job.screeningPolicy,
       aiUsage: {
@@ -250,24 +317,34 @@ export async function runScreeningPipeline(
       screenedAt: new Date(),
     });
 
-    // Persist Individual Requirement Results
+    // Persist Individual Requirement Results with canonical schema assertions
     if (finalEvaluatedRequirements.length > 0) {
-      const requirementResultDocs = finalEvaluatedRequirements.map((r) => ({
-        screeningResultId: screeningResult._id,
-        jobRequirementId: new Types.ObjectId(r.jobRequirementId),
-        companyId: application.companyId,
-        candidateId: candidate._id,
-        jobId: job._id,
-        requirementTitle: r.requirementTitle,
-        requirementCategory: r.requirementCategory,
-        requirementType: r.requirementType,
-        status: r.status,
-        evidenceQuote: r.evidenceQuote,
-        reasoning: r.reasoning,
-        confidence: r.confidence,
-        verifiedByAi: true,
-        scoreContribution: r.scoreContribution,
-      }));
+      const requirementResultDocs = finalEvaluatedRequirements.map((r) => {
+        const originalReq = requirements.find(
+          (req) => req._id.toString() === r.jobRequirementId.toString()
+        );
+
+        const canonicalType = originalReq?.type || r.requirementType;
+        const canonicalCategory = originalReq?.category || r.requirementCategory;
+        const canonicalTitle = originalReq?.title || r.requirementTitle;
+
+        return {
+          screeningResultId: screeningResult._id,
+          jobRequirementId: new Types.ObjectId(r.jobRequirementId),
+          companyId: application.companyId,
+          candidateId: candidate._id,
+          jobId: job._id,
+          requirementTitle: canonicalTitle,
+          requirementCategory: canonicalCategory,
+          requirementType: canonicalType,
+          status: r.status,
+          evidenceQuote: r.evidenceQuote,
+          reasoning: r.reasoning,
+          confidence: r.confidence,
+          verifiedByAi: true,
+          scoreContribution: r.scoreContribution,
+        };
+      });
 
       await ScreeningRequirementResult.insertMany(requirementResultDocs);
     }
@@ -275,9 +352,12 @@ export async function runScreeningPipeline(
     console.log(`[SCREENING PIPELINE] SCREENING RESULT SAVED - ResultId: ${screeningResult._id}`);
 
     // Mark Application as COMPLETED
-    application.screeningStatus = "COMPLETED";
-    application.screeningError = undefined;
-    await application.save();
+    await Application.findByIdAndUpdate(applicationId, {
+      currentStage: "COMPLETED",
+      stageProgress: 100,
+      screeningStatus: "COMPLETED",
+      screeningError: undefined,
+    });
 
     console.log(`[SCREENING PIPELINE] PIPELINE COMPLETE - Status: COMPLETED in ${processingDurationMs}ms\n`);
 
@@ -292,9 +372,12 @@ export async function runScreeningPipeline(
   } catch (error: any) {
     console.error(`[SCREENING PIPELINE] PIPELINE FAILED - Application: ${applicationId}, Error:`, error?.message || error);
 
-    application.screeningStatus = "FAILED";
-    application.screeningError = error?.message || "Screening processing failed.";
-    await application.save();
+    await Application.findByIdAndUpdate(applicationId, {
+      currentStage: "FAILED",
+      stageProgress: 100,
+      screeningStatus: "FAILED",
+      screeningError: error?.message || "Screening processing failed.",
+    });
 
     return {
       success: false,
@@ -303,3 +386,5 @@ export async function runScreeningPipeline(
     };
   }
 }
+
+export default runScreeningPipeline;

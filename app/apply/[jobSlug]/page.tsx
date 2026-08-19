@@ -20,15 +20,67 @@ import {
   Briefcase,
   FileQuestion,
   Calendar,
+  Check,
+  Copy,
+  FileCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
+const PIPELINE_STAGES = [
+  {
+    key: "RECEIVED",
+    title: "Application submitted",
+    description: "Your submission has been securely registered.",
+  },
+  {
+    key: "FILE_PROCESSING",
+    title: "Resume uploaded",
+    description: "Extracting document structure and readable text.",
+  },
+  {
+    key: "RESUME_ANALYSIS",
+    title: "Analyzing your qualifications",
+    description: "Reviewing work history, technical skills, and experience.",
+  },
+  {
+    key: "REQUIREMENT_MATCHING",
+    title: "Matching job requirements",
+    description: "Evaluating alignment against position criteria.",
+  },
+  {
+    key: "EVIDENCE_VERIFICATION",
+    title: "Verifying screening results",
+    description: "Confirming verified citations for recruiter review.",
+  },
+];
+
+function getStageIndex(stage: string): number {
+  switch (stage) {
+    case "RECEIVED":
+      return 0;
+    case "FILE_PROCESSING":
+      return 1;
+    case "RESUME_ANALYSIS":
+      return 2;
+    case "REQUIREMENT_MATCHING":
+      return 3;
+    case "EVIDENCE_VERIFICATION":
+      return 4;
+    case "COMPLETED":
+    case "FAILED":
+      return 5;
+    default:
+      return 0;
+  }
+}
+
 export default function CandidateApplyPage() {
   const params = useParams();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -44,9 +96,15 @@ export default function CandidateApplyPage() {
   const [dragActive, setDragActive] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
 
-  // Submission & Multi-stage loading
+  // Asynchronous Submission & Real Status Polling
   const [submitting, setSubmitting] = useState(false);
-  const [submissionStep, setSubmissionStep] = useState(1);
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
+  const [currentAppId, setCurrentAppId] = useState<string | null>(null);
+  const [currentRefNumber, setCurrentRefNumber] = useState<string | null>(null);
+  const [screeningStatus, setScreeningStatus] = useState<"PROCESSING" | "COMPLETED" | "FAILED">("PROCESSING");
+  const [currentStage, setCurrentStage] = useState<string>("RECEIVED");
+  const [stageProgress, setStageProgress] = useState<number>(15);
+  const [copiedRef, setCopiedRef] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -73,6 +131,16 @@ export default function CandidateApplyPage() {
       loadJob();
     }
   }, [params.jobSlug]);
+
+  // Clean up polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, []);
 
   // Handle Drag & Drop
   const handleDrag = (e: React.DragEvent) => {
@@ -111,9 +179,19 @@ export default function CandidateApplyPage() {
     setResumeFile(file);
   };
 
-  // Submit Application
+  const handleCopyReference = () => {
+    if (currentRefNumber) {
+      navigator.clipboard.writeText(currentRefNumber);
+      setCopiedRef(true);
+      setTimeout(() => setCopiedRef(false), 2000);
+    }
+  };
+
+  // Submit Application with Real Asynchronous Pipeline & Polling
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (submitting) return; // Prevent duplicate clicks
 
     if (!name.trim() || !email.trim()) {
       setSubmitError("Please enter your full name and email address.");
@@ -132,13 +210,10 @@ export default function CandidateApplyPage() {
 
     setSubmitError(null);
     setSubmitting(true);
-    setSubmissionStep(1);
-
-    // Staged progress timers for smooth UX
-    const stepTimer1 = setTimeout(() => setSubmissionStep(2), 1200);
-    const stepTimer2 = setTimeout(() => setSubmissionStep(3), 2800);
-    const stepTimer3 = setTimeout(() => setSubmissionStep(4), 4500);
-    const stepTimer4 = setTimeout(() => setSubmissionStep(5), 6500);
+    setShowProcessingModal(true);
+    setScreeningStatus("PROCESSING");
+    setCurrentStage("RECEIVED");
+    setStageProgress(15);
 
     const formData = new FormData();
     formData.append("jobId", job.id);
@@ -156,50 +231,82 @@ export default function CandidateApplyPage() {
 
       const json = await res.json();
 
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
-      clearTimeout(stepTimer3);
-      clearTimeout(stepTimer4);
-
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Failed to submit application.");
       }
 
-      setSubmissionStep(6);
-      setTimeout(() => {
-        const ref = json.data?.referenceNumber || "APP-SUCCESS";
-        router.push(`/apply/${params.jobSlug}/success?ref=${encodeURIComponent(ref)}&name=${encodeURIComponent(name)}`);
-      }, 1000);
+      const appId = json.data?.applicationId;
+      const refNum = json.data?.referenceNumber || `APP-${appId?.slice(-8).toUpperCase()}`;
+
+      setCurrentAppId(appId);
+      setCurrentRefNumber(refNum);
+      if (json.data?.currentStage) setCurrentStage(json.data.currentStage);
+      if (json.data?.progress) setStageProgress(json.data.progress);
+
+      // Start Real-Time Status Polling (every 1.2s)
+      if (pollingRef.current) clearInterval(pollingRef.current);
+
+      pollingRef.current = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/applications/${appId}/status`);
+          if (!statusRes.ok) return;
+
+          const statusData = await statusRes.json();
+
+          if (statusData.currentStage) {
+            setCurrentStage(statusData.currentStage);
+          }
+          if (typeof statusData.progress === "number") {
+            setStageProgress(statusData.progress);
+          }
+          if (statusData.screeningStatus) {
+            setScreeningStatus(statusData.screeningStatus);
+          }
+
+          // Check for pipeline completion or failure
+          if (statusData.completed || statusData.screeningStatus === "COMPLETED") {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setScreeningStatus("COMPLETED");
+            setStageProgress(100);
+            setCurrentStage("COMPLETED");
+          } else if (statusData.failed || statusData.screeningStatus === "FAILED") {
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            setScreeningStatus("FAILED");
+            setStageProgress(100);
+            setCurrentStage("FAILED");
+          }
+        } catch {
+          // Network hiccup during polling - retry automatically next tick
+        }
+      }, 1200);
     } catch (err: any) {
-      clearTimeout(stepTimer1);
-      clearTimeout(stepTimer2);
-      clearTimeout(stepTimer3);
-      clearTimeout(stepTimer4);
-      setSubmitError(err.message || "An unexpected error occurred during submission.");
+      if (pollingRef.current) clearInterval(pollingRef.current);
+      setShowProcessingModal(false);
       setSubmitting(false);
+      setSubmitError(err.message || "An unexpected error occurred during submission.");
     }
   };
 
   // 1. Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#e7e5e2] flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#19191a] border-t-transparent" />
-          <p className="text-sm font-medium text-slate-500">Loading job opening...</p>
+          <p className="text-sm font-medium text-slate-600">Loading job opening...</p>
         </div>
       </div>
     );
   }
 
-  // 2. 404 Position Not Found State (Intermediate Typography)
+  // 2. 404 Position Not Found State
   if (isNotFound || !job) {
     return (
       <div className="min-h-screen bg-[#e7e5e2] flex flex-col justify-between text-[#19191a] selection:bg-[#19191a] selection:text-white">
         <header className="border-b border-black/10 bg-[#e7e5e2]/80 backdrop-blur-md">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#19191a] text-white font-bold text-sm">
                 C
               </div>
               <span className="text-sm font-bold text-slate-900">Career Portal</span>
@@ -234,7 +341,7 @@ export default function CandidateApplyPage() {
           </div>
         </main>
 
-        <footer className="py-6 text-center text-xs text-slate-400 border-t border-slate-200">
+        <footer className="py-6 text-center text-xs text-slate-400 border-t border-black/10">
           Powered by AI Recruitment Screening SaaS
         </footer>
       </div>
@@ -253,8 +360,10 @@ export default function CandidateApplyPage() {
       })
     : null;
 
+  const activeStageIndex = getStageIndex(currentStage);
+
   return (
-    <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between relative">
       {/* Top Company Brand Navigation */}
       <header className="border-b border-black/10 bg-[#e7e5e2]/90 sticky top-0 z-20 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -474,6 +583,7 @@ export default function CandidateApplyPage() {
                       placeholder="e.g. Alex Johnson"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
+                      disabled={submitting}
                       required
                     />
                   </div>
@@ -487,6 +597,7 @@ export default function CandidateApplyPage() {
                       placeholder="alex@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      disabled={submitting}
                       required
                     />
                   </div>
@@ -498,6 +609,7 @@ export default function CandidateApplyPage() {
                         placeholder="+1 (555) 000-0000"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
+                        disabled={submitting}
                       />
                     </div>
                     <div>
@@ -506,6 +618,7 @@ export default function CandidateApplyPage() {
                         placeholder="City, Country"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
+                        disabled={submitting}
                       />
                     </div>
                   </div>
@@ -520,14 +633,14 @@ export default function CandidateApplyPage() {
                       onDragLeave={handleDrag}
                       onDragOver={handleDrag}
                       onDrop={handleDrop}
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => !submitting && fileInputRef.current?.click()}
                       className={`cursor-pointer rounded-xl border-2 border-dashed p-5 text-center transition-all ${
                         dragActive
                           ? "border-[#19191a] bg-slate-100"
                           : resumeFile
                           ? "border-emerald-500 bg-emerald-50/30"
                           : "border-slate-300 hover:border-slate-400 bg-slate-50/50"
-                      }`}
+                      } ${submitting ? "opacity-60 pointer-events-none" : ""}`}
                     >
                       <input
                         ref={fileInputRef}
@@ -538,6 +651,7 @@ export default function CandidateApplyPage() {
                             handleFileSelected(e.target.files[0]);
                           }
                         }}
+                        disabled={submitting}
                         className="hidden"
                       />
 
@@ -554,16 +668,18 @@ export default function CandidateApplyPage() {
                               </p>
                             </div>
                           </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setResumeFile(null);
-                            }}
-                            className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
+                          {!submitting && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setResumeFile(null);
+                              }}
+                              className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="flex flex-col items-center gap-1.5">
@@ -586,6 +702,7 @@ export default function CandidateApplyPage() {
                       id="consent"
                       checked={consentChecked}
                       onChange={(e) => setConsentChecked(e.target.checked)}
+                      disabled={submitting}
                       className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#19191a] focus:ring-[#19191a]"
                       required
                     />
@@ -602,7 +719,7 @@ export default function CandidateApplyPage() {
                     {submitting ? (
                       <>
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Submitting Application...</span>
+                        <span>Processing Application...</span>
                       </>
                     ) : (
                       <>
@@ -618,9 +735,224 @@ export default function CandidateApplyPage() {
         </div>
       </main>
 
-      <footer className="py-6 text-center text-xs text-slate-400 border-t border-slate-200 mt-12 bg-white">
-        Powered by AI Recruitment Screening SaaS • Secured & Encrypted
+      {/* Footer */}
+      <footer className="py-6 text-center text-xs text-slate-400 border-t border-black/10">
+        Powered by AI Recruitment Screening SaaS • Deterministic Evaluation & Evidence Audit
       </footer>
+
+      {/* FULL-SCREEN ASYNCHRONOUS APPLICATION PROCESSING MODAL */}
+      {showProcessingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md sm:max-w-lg bg-white rounded-3xl border border-black/10 shadow-2xl p-6 sm:p-8 relative overflow-hidden flex flex-col">
+            
+            {/* Top Progress Bar */}
+            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-6">
+              <div
+                className="bg-[#19191a] h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${Math.min(stageProgress, 100)}%` }}
+              />
+            </div>
+
+            {/* PROCESSING STATE */}
+            {screeningStatus === "PROCESSING" && (
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-start gap-4">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#19191a] text-white shadow-sm">
+                    <Sparkles className="h-5 w-5 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                      Application Received
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      We&apos;re reviewing your application...
+                    </p>
+                  </div>
+                </div>
+
+                {/* Multi-Stage Pipeline Checklist */}
+                <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-4">
+                  {PIPELINE_STAGES.map((stage, idx) => {
+                    const isCompleted = activeStageIndex > idx;
+                    const isCurrent = activeStageIndex === idx;
+                    const isUpcoming = activeStageIndex < idx;
+
+                    return (
+                      <div
+                        key={stage.key}
+                        className={`flex items-start gap-3 transition-opacity duration-300 ${
+                          isUpcoming ? "opacity-40" : "opacity-100"
+                        }`}
+                      >
+                        {/* Status Icon Indicator */}
+                        <div className="mt-0.5 shrink-0">
+                          {isCompleted ? (
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                              <Check className="h-3 w-3 stroke-[3]" />
+                            </div>
+                          ) : isCurrent ? (
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#19191a] text-white">
+                              <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            </div>
+                          ) : (
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white">
+                              <div className="h-1.5 w-1.5 rounded-full bg-slate-300" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stage Text */}
+                        <div className="min-w-0">
+                          <p
+                            className={`text-xs leading-tight ${
+                              isCurrent
+                                ? "font-bold text-[#19191a]"
+                                : isCompleted
+                                ? "font-semibold text-slate-900"
+                                : "font-normal text-slate-500"
+                            }`}
+                          >
+                            {stage.title}
+                          </p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {stage.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Bottom Helpful Hint */}
+                <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Real-time verification</span>
+                  </span>
+                  <span className="font-mono text-slate-400">
+                    {stageProgress}%
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* COMPLETED SUCCESS STATE */}
+            {screeningStatus === "COMPLETED" && (
+              <div className="text-center space-y-5 animate-in zoom-in-95 duration-200">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600 shadow-xs">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Application Submitted
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                    Your application has been successfully received and is now under review.
+                  </p>
+                </div>
+
+                {/* Reference ID Card */}
+                {currentRefNumber && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Application Reference ID
+                    </p>
+                    <div className="flex items-center justify-center gap-2 mt-1">
+                      <span className="font-mono font-extrabold text-base sm:text-lg text-slate-900 tracking-wide">
+                        {currentRefNumber}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyReference}
+                        title="Copy Reference"
+                        className="rounded-md p-1.5 text-slate-400 hover:bg-slate-200/70 hover:text-slate-700 transition-colors"
+                      >
+                        {copiedRef ? (
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Verification Confirmation Points */}
+                <div className="text-left space-y-2.5 text-xs text-slate-600 bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                  <div className="flex items-start gap-2.5">
+                    <FileCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Qualifications audited against role requirements</span>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span>Evidence summary prepared for hiring team human review</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Button
+                    onClick={() => {
+                      setShowProcessingModal(false);
+                      setSubmitting(false);
+                      router.push(`/apply/${params.jobSlug}/success?ref=${encodeURIComponent(currentRefNumber || "")}&name=${encodeURIComponent(name)}`);
+                    }}
+                    className="w-full bg-[#19191a] hover:bg-[#2b2b2d] text-white text-xs font-semibold py-2.5"
+                  >
+                    <span>View Confirmation Details</span>
+                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* FAILED / FALLBACK STATE */}
+            {screeningStatus === "FAILED" && (
+              <div className="text-center space-y-5 animate-in zoom-in-95 duration-200">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-xs">
+                  <CheckCircle2 className="h-8 w-8" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                    Application Received
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-sm mx-auto leading-relaxed">
+                    We couldn&apos;t complete the automated screening. Your application was received successfully. The hiring team can still review it.
+                  </p>
+                </div>
+
+                {currentRefNumber && (
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Application Reference ID
+                    </p>
+                    <p className="font-mono font-bold text-base text-slate-900 mt-1">
+                      {currentRefNumber}
+                    </p>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <Button
+                    onClick={() => {
+                      setShowProcessingModal(false);
+                      setSubmitting(false);
+                    }}
+                    variant="outline"
+                    className="w-full text-xs font-semibold py-2.5"
+                  >
+                    Close & Return to Job Listing
+                  </Button>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
     </div>
   );
 }

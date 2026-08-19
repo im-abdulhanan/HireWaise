@@ -14,6 +14,15 @@ export type ScreeningPipelineStatus =
   | "COMPLETED"
   | "FAILED";
 
+export type ScreeningStage =
+  | "RECEIVED"
+  | "FILE_PROCESSING"
+  | "RESUME_ANALYSIS"
+  | "REQUIREMENT_MATCHING"
+  | "EVIDENCE_VERIFICATION"
+  | "COMPLETED"
+  | "FAILED";
+
 export interface IApplication extends Document {
   companyId: Types.ObjectId;
   jobId: Types.ObjectId;
@@ -21,6 +30,9 @@ export interface IApplication extends Document {
   resumeId: Types.ObjectId;
   status: RecruiterDecisionStatus;
   screeningStatus: ScreeningPipelineStatus;
+  currentStage: ScreeningStage;
+  stageProgress: number;
+  referenceNumber?: string;
   screeningError?: string;
   appliedAt: Date;
   idempotencyKey?: string;
@@ -62,6 +74,27 @@ const ApplicationSchema = new Schema<IApplication>(
       type: String,
       enum: ["PENDING", "PROCESSING", "COMPLETED", "FAILED"],
       default: "PENDING",
+    },
+    currentStage: {
+      type: String,
+      enum: [
+        "RECEIVED",
+        "FILE_PROCESSING",
+        "RESUME_ANALYSIS",
+        "REQUIREMENT_MATCHING",
+        "EVIDENCE_VERIFICATION",
+        "COMPLETED",
+        "FAILED",
+      ],
+      default: "RECEIVED",
+    },
+    stageProgress: {
+      type: Number,
+      default: 15,
+    },
+    referenceNumber: {
+      type: String,
+      index: true,
     },
     screeningError: { type: String },
     appliedAt: { type: Date, default: Date.now },
