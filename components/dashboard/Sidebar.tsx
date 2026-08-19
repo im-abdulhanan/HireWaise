@@ -43,7 +43,7 @@ export function Sidebar({ isOpen, onClose, companyName = "Workspace" }: SidebarP
 
       <aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 lg:static lg:translate-x-0",
+          "fixed top-0 bottom-0 left-0 z-50 flex w-72 flex-col border-r border-black/10 bg-[#e7e5e2] transition-transform duration-300 lg:static lg:translate-x-0",
           isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         )}
       >

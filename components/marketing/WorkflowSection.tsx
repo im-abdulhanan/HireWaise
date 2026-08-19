@@ -43,7 +43,7 @@ export function WorkflowSection() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-white border-t border-slate-200/80">
+    <section id="how-it-works" className="py-24 bg-[#e7e5e2] border-t border-black/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
@@ -52,7 +52,7 @@ export function WorkflowSection() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
             From Raw Job Description to Verified Candidate Shortlist
           </h2>
-          <p className="text-sm sm:text-base text-slate-500 mt-3">
+          <p className="text-sm sm:text-base text-slate-600 mt-3">
             Say goodbye to keyword buzzword bingo. ScreenAI pairs deterministic rule precision with transparent AI evidence auditing.
           </p>
         </div>
@@ -62,7 +62,7 @@ export function WorkflowSection() {
           {steps.map((step) => (
             <div
               key={step.num}
-              className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 relative hover:bg-white hover:shadow-lg hover:border-slate-300 transition-all group"
+              className="rounded-2xl border border-black/15 bg-[#dedbd6]/50 p-6 relative hover:bg-[#dedbd6] hover:shadow-lg hover:border-black/30 transition-all group"
             >
               <span className="text-3xl font-extrabold text-[#19191a] font-mono">
                 {step.num}
@@ -78,7 +78,7 @@ export function WorkflowSection() {
         </div>
 
         {/* Staged Pipeline Architecture Banner */}
-        <div className="rounded-3xl border border-slate-300 bg-slate-100/60 p-8 sm:p-12">
+        <div className="rounded-3xl border border-black/15 bg-[#dedbd6] p-8 sm:p-12">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
               Under the Hood Architecture
@@ -95,7 +95,7 @@ export function WorkflowSection() {
             {pipelineStages.map((stage, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-white/80 bg-white p-5 shadow-xs"
+                className="rounded-xl border border-black/10 bg-[#e7e5e2] p-5 shadow-xs"
               >
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#19191a] text-white font-mono text-xs font-bold">
@@ -103,7 +103,7 @@ export function WorkflowSection() {
                   </div>
                   <h4 className="text-xs font-bold text-slate-900">{stage.name}</h4>
                 </div>
-                <p className="text-[11px] text-slate-500 leading-relaxed">
+                <p className="text-[11px] text-slate-600 leading-relaxed">
                   {stage.desc}
                 </p>
               </div>

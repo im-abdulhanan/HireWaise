@@ -24,24 +24,24 @@ import { MarketingFooter } from "@/components/marketing/Footer";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50 text-[#19191a] selection:bg-[#19191a] selection:text-white">
+    <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white">
       {/* 1. Header & Navigation */}
       <MarketingNavbar />
 
       {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 bg-gradient-to-b from-white via-slate-50/50 to-slate-50">
+      <section className="relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 bg-[#e7e5e2]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100 px-3.5 py-1 text-xs font-semibold text-[#19191a] shadow-xs mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/5 px-3.5 py-1 text-xs font-semibold text-[#19191a] shadow-xs mb-8">
             <Sparkles className="h-3.5 w-3.5 text-[#19191a]" />
             <span>Autonomous AI Screening & Deterministic Matching SaaS</span>
           </div>
 
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#19191a] tracking-tight max-w-5xl mx-auto leading-[1.1]">
             Screen Candidates Faster With{" "}
-            <span className="text-[#19191a] underline decoration-neutral-300 underline-offset-8">AI-Powered</span> Resume Matching
+            <span className="text-[#19191a]">AI-Powered</span> Resume Matching
           </h1>
 
-          <p className="mt-6 max-w-3xl mx-auto text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+          <p className="mt-6 max-w-3xl mx-auto text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
             Automatically compare candidate resumes against exact job requirements, surface verified evidence quotes, and help recruiters focus immediately on the candidates who deserve a closer look.
           </p>
 
@@ -55,26 +55,26 @@ export default function HomePage() {
             </Link>
 
             <a href="#interactive-demo">
-              <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-white text-[#19191a] hover:bg-slate-100">
+              <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-transparent border border-black/20 text-[#19191a] hover:bg-black hover:text-white">
                 Inspect AI Evidence Demo
               </Button>
             </a>
           </div>
 
           {/* Social Proof / Security Badges */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              <ShieldCheck className="h-4 w-4 text-emerald-700" />
               Zero-Hallucination Evidence
             </span>
             <span>•</span>
             <span className="flex items-center gap-1.5">
-              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
               17-Column Google Sheets Sync
             </span>
             <span>•</span>
             <span className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4 text-emerald-600" />
+              <Lock className="h-4 w-4 text-emerald-700" />
               Multi-Tenant Isolated
             </span>
           </div>
@@ -82,7 +82,7 @@ export default function HomePage() {
       </section>
 
       {/* 3. The Problem Section */}
-      <section className="py-20 bg-white border-y border-slate-200/80">
+      <section className="py-20 bg-[#e7e5e2] border-y border-black/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 space-y-4">
@@ -135,63 +135,63 @@ export default function HomePage() {
       <WorkflowSection />
 
       {/* 6. Google Sheets 17-Column Live Sync Highlight */}
-      <section id="sheets-sync" className="py-24 bg-slate-50 border-t border-slate-200/80">
+      <section id="sheets-sync" className="py-24 bg-[#e7e5e2] border-t border-black/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
                 Real-Time Data Pipeline
               </span>
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
                 Enterprise 17-Column Live Google Sheets Sync
               </h2>
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-700 leading-relaxed">
                 Keep your hiring team and stakeholders in sync without logging into another dashboard. Connect your Google account and ScreenAI automatically updates candidate scores, evidence quotes, and recruiter pipeline statuses.
               </p>
               <div className="pt-2 flex flex-wrap gap-2">
-                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1">
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1 border border-emerald-200">
                   OAuth 2.0 Connected
                 </span>
-                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1">
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1 border border-emerald-200">
                   AES-256 Token Encryption
                 </span>
-                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1">
+                <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1 border border-emerald-200">
                   Auto-Formatted Columns
                 </span>
               </div>
             </div>
 
-            <div className="lg:col-span-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/50 space-y-3">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="lg:col-span-6 rounded-2xl border border-black/15 bg-[#dedbd6]/50 p-6 shadow-sm space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-black/10">
                 <div className="flex items-center gap-2">
-                  <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+                  <FileSpreadsheet className="h-5 w-5 text-emerald-700" />
                   <span className="font-bold text-xs text-slate-900">ScreenAI Live Pipeline Sheet</span>
                 </div>
-                <span className="text-[11px] text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded">
+                <span className="text-[11px] text-emerald-800 font-medium bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
                   Live Synced
                 </span>
               </div>
 
-              <div className="space-y-2 text-[11px] font-mono text-slate-700">
-                <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
+              <div className="space-y-2 text-[11px] font-mono text-slate-800">
+                <div className="p-2 rounded bg-white/70 border border-black/10 flex justify-between">
                   <span>Col 1-4: ID, Name, Email, Job</span>
-                  <span className="text-slate-400">Identity</span>
+                  <span className="text-slate-500">Identity</span>
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
+                <div className="p-2 rounded bg-white/70 border border-black/10 flex justify-between">
                   <span>Col 5-6: Match Score (94/100), AI Category</span>
                   <span className="text-[#19191a] font-bold">Evaluated</span>
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
+                <div className="p-2 rounded bg-white/70 border border-black/10 flex justify-between">
                   <span>Col 7-9: Matched Skills, Missing, Preferred</span>
-                  <span className="text-slate-400">Skills</span>
+                  <span className="text-slate-500">Skills</span>
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
+                <div className="p-2 rounded bg-white/70 border border-black/10 flex justify-between">
                   <span>Col 12-13: Evidence Summary, Confidence (98%)</span>
-                  <span className="text-emerald-600 font-bold">Quotes</span>
+                  <span className="text-emerald-700 font-bold">Quotes</span>
                 </div>
-                <div className="p-2 rounded bg-slate-50 border border-slate-100 flex justify-between">
+                <div className="p-2 rounded bg-white/70 border border-black/10 flex justify-between">
                   <span>Col 14-17: Recruiter Status, Timestamps, Version</span>
-                  <span className="text-slate-400">Pipeline</span>
+                  <span className="text-slate-500">Pipeline</span>
                 </div>
               </div>
             </div>

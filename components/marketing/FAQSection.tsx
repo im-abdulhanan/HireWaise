@@ -38,7 +38,7 @@ export function FAQSection() {
   };
 
   return (
-    <section id="faq" className="py-24 bg-slate-50 border-t border-slate-200/80">
+    <section id="faq" className="py-24 bg-[#e7e5e2] border-t border-black/10">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
@@ -55,7 +55,7 @@ export function FAQSection() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-xs transition-all"
+                className="rounded-2xl border border-black/15 bg-[#dedbd6]/60 overflow-hidden shadow-xs hover:border-black/30 transition-all"
               >
                 <button
                   type="button"
@@ -64,14 +64,14 @@ export function FAQSection() {
                 >
                   <span className="pr-4">{faq.q}</span>
                   <ChevronDown
-                    className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
+                    className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 ${
                       isOpen ? "rotate-180 text-[#19191a]" : ""
                     }`}
                   />
                 </button>
 
                 {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-xs text-slate-600 leading-relaxed border-t border-slate-100">
+                  <div className="px-5 pb-5 pt-1 text-xs text-slate-700 leading-relaxed border-t border-black/10">
                     {faq.a}
                   </div>
                 )}

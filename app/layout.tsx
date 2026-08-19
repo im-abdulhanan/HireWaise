@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-slate-50 text-[#19191a] selection:bg-[#19191a] selection:text-white">
+      <body className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

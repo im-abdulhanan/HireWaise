@@ -195,8 +195,8 @@ export default function CandidateApplyPage() {
   // 2. 404 Position Not Found State (Intermediate Typography)
   if (isNotFound || !job) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col justify-between text-[#19191a] selection:bg-[#19191a] selection:text-white">
-        <header className="border-b border-slate-200 bg-white/80 backdrop-blur-md">
+      <div className="min-h-screen bg-[#e7e5e2] flex flex-col justify-between text-[#19191a] selection:bg-[#19191a] selection:text-white">
+        <header className="border-b border-black/10 bg-[#e7e5e2]/80 backdrop-blur-md">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white font-bold text-sm">
@@ -211,7 +211,7 @@ export default function CandidateApplyPage() {
         </header>
 
         <main className="flex-1 flex items-center justify-center p-6 sm:p-12">
-          <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-8 sm:p-10 text-center shadow-md shadow-slate-200/50">
+          <div className="max-w-md w-full rounded-2xl border border-black/15 bg-white p-8 sm:p-10 text-center shadow-md">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 ring-1 ring-slate-200">
               <FileQuestion className="h-7 w-7" />
             </div>
@@ -219,15 +219,10 @@ export default function CandidateApplyPage() {
             <Badge variant="secondary" className="mb-3 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
               Position Unavailable
             </Badge>
-
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Position Not Found
-            </h1>
-
-            <p className="text-xs sm:text-sm text-slate-500 mt-2 leading-relaxed">
-              This job opening does not exist, has expired, or has been permanently removed by the hiring company.
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">404 — Position Not Found</h1>
+            <p className="mt-3 text-xs sm:text-sm text-slate-600 leading-relaxed">
+              This job posting may have expired, been removed, or the link provided is inaccurate.
             </p>
-
             <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col gap-2.5">
               <Link href="/">
                 <Button className="w-full gap-2 text-xs font-semibold bg-[#19191a] hover:bg-[#2b2b2d] text-white">
@@ -259,9 +254,9 @@ export default function CandidateApplyPage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between">
+    <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between">
       {/* Top Company Brand Navigation */}
-      <header className="border-b border-slate-200 bg-white/90 sticky top-0 z-20 backdrop-blur-md">
+      <header className="border-b border-black/10 bg-[#e7e5e2]/90 sticky top-0 z-20 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#19191a] text-white font-bold shadow-sm">

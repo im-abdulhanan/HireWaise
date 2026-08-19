@@ -20,7 +20,13 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password || !companyName) {
+    if (loading) return;
+
+    const trimmedName = name.trim();
+    const normalizedEmail = email.toLowerCase().trim();
+    const trimmedCompany = companyName.trim();
+
+    if (!trimmedName || !normalizedEmail || !password || !trimmedCompany) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -37,7 +43,12 @@ export default function SignupPage() {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, companyName }),
+        body: JSON.stringify({
+          name: trimmedName,
+          email: normalizedEmail,
+          password,
+          companyName: trimmedCompany,
+        }),
       });
 
       const json = await res.json();
@@ -45,15 +56,16 @@ export default function SignupPage() {
         throw new Error(json.error || "Failed to create account.");
       }
 
-      // Automatically sign in
+      // Automatically sign in with the new credentials
       const signInRes = await signIn("credentials", {
         redirect: false,
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (signInRes?.error) {
-        router.push("/login");
+        // Fallback navigation with prefilled email if automatic session attachment hit a transient delay
+        router.push(`/login?email=${encodeURIComponent(normalizedEmail)}&registered=true`);
       } else {
         router.push("/dashboard");
         router.refresh();
@@ -77,7 +89,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#e7e5e2] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2.5">
@@ -111,31 +123,17 @@ export default function SignupPage() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Company Name
-              </label>
-              <div className="relative">
-                <Building className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Acme Corp, TechCorp"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="pl-9"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Your Full Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Jane Smith"
+                  type="text"
+                  placeholder="e.g. Sarah Connor"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="pl-9"
+                  disabled={loading}
                   required
                 />
               </div>
@@ -149,10 +147,11 @@ export default function SignupPage() {
                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                 <Input
                   type="email"
-                  placeholder="jane@company.com"
+                  placeholder="sarah@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
+                  disabled={loading}
                   required
                 />
               </div>
@@ -160,7 +159,25 @@ export default function SignupPage() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Password (min 8 characters)
+                Company / Agency Name
+              </label>
+              <div className="relative">
+                <Building className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                <Input
+                  type="text"
+                  placeholder="e.g. Acme Talent Partners"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="pl-9"
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Password (min. 8 characters)
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -170,7 +187,9 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9"
+                  disabled={loading}
                   required
+                  minLength={8}
                 />
               </div>
             </div>
@@ -180,7 +199,7 @@ export default function SignupPage() {
                 {loading ? (
                   <>
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Creating account...</span>
+                    <span>Creating workspace...</span>
                   </>
                 ) : (
                   <>
@@ -202,7 +221,7 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Social OAuth Buttons under Form */}
+          {/* Social OAuth Buttons under Email/Password */}
           <div className="space-y-3">
             <button
               type="button"

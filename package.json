@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
-    "test:phase1": "tsx tests/phase1.test.ts"
+    "test:phase1": "tsx tests/phase1.test.ts",
+    "test:auth": "tsx tests/auth-flow.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

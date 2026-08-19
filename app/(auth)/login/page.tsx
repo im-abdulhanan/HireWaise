@@ -1,46 +1,67 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Sparkles, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
+import { Sparkles, Lock, Mail, AlertCircle, CheckCircle2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [registeredSuccess, setRegisteredSuccess] = useState(false);
+
+  useEffect(() => {
+    const prefillEmail = searchParams?.get("email");
+    const registered = searchParams?.get("registered");
+    if (prefillEmail) {
+      setEmail(prefillEmail);
+    }
+    if (registered === "true") {
+      setRegisteredSuccess(true);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (loading) return;
+
+    const normalizedEmail = email.toLowerCase().trim();
+    if (!normalizedEmail || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
     setError(null);
+    setRegisteredSuccess(false);
     setLoading(true);
 
     try {
       const res = await signIn("credentials", {
         redirect: false,
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (res?.error) {
-        setError("Invalid email or password.");
+        if (res.error === "CredentialsSignin") {
+          setError("Email or password is incorrect.");
+        } else {
+          setError(res.error || "Authentication failed. Please try again.");
+        }
       } else {
         router.push("/dashboard");
         router.refresh();
       }
     } catch (err: any) {
-      setError("An unexpected error occurred. Please try again.");
+      setError("An unexpected network or server error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -58,7 +79,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#e7e5e2] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2.5">
@@ -81,6 +102,13 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div className="bg-white py-8 px-6 shadow-xl shadow-slate-200/50 rounded-2xl border border-slate-200 sm:px-10">
+          {registeredSuccess && (
+            <div className="mb-6 flex items-center gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              <span>Account created successfully! Please sign in with your password.</span>
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 flex items-center gap-2.5 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
               <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
@@ -102,6 +130,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-9"
+                  disabled={loading}
                   required
                 />
               </div>
@@ -119,6 +148,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-9"
+                  disabled={loading}
                   required
                 />
               </div>
@@ -207,5 +237,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#e7e5e2] flex items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#19191a] border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

@@ -61,7 +61,7 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-white border-t border-slate-200/80">
+    <section id="pricing" className="py-24 bg-[#e7e5e2] border-t border-black/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
@@ -70,56 +70,63 @@ export function PricingSection() {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-2">
             Screen Hundreds of Resumes in Minutes
           </h2>
-          <p className="text-sm sm:text-base text-slate-500 mt-3">
+          <p className="text-sm sm:text-base text-slate-600 mt-3">
             Choose the plan that fits your hiring velocity. Cancel or change tiers anytime.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {tiers.map((tier) => (
             <div
               key={tier.name}
               className={`rounded-3xl p-8 flex flex-col justify-between transition-all ${
                 tier.highlight
-                  ? "border-2 border-[#19191a] bg-white shadow-xl relative"
-                  : "border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-lg"
+                  ? "border-2 border-black bg-black text-white shadow-2xl relative lg:-translate-y-2 z-10"
+                  : "border border-black/15 bg-[#dedbd6]/50 text-slate-900 hover:bg-[#dedbd6] hover:border-black/30 hover:shadow-xl relative"
               }`}
             >
-              {tier.badge && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-[#19191a] px-3 py-1 text-[11px] font-bold text-white shadow-sm">
-                  {tier.badge}
-                </span>
-              )}
-
               <div>
-                <h3 className="text-lg font-bold text-slate-900">{tier.name}</h3>
-                <p className="text-xs text-slate-500 mt-1">{tier.desc}</p>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className={`text-lg font-bold ${tier.highlight ? "text-white" : "text-slate-900"}`}>
+                    {tier.name}
+                  </h3>
+                  {tier.badge && (
+                    <span className="inline-flex items-center rounded-full bg-white/20 border border-white/30 px-3 py-0.5 text-[11px] font-semibold text-white backdrop-blur-xs">
+                      {tier.badge}
+                    </span>
+                  )}
+                </div>
+
+                <p className={`text-xs mt-1 ${tier.highlight ? "text-neutral-400" : "text-slate-600"}`}>
+                  {tier.desc}
+                </p>
 
                 <div className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-slate-900 font-sans tracking-tight">
+                  <span className={`text-4xl font-extrabold font-sans tracking-tight ${tier.highlight ? "text-white" : "text-slate-900"}`}>
                     {tier.price}
                   </span>
-                  <span className="text-xs text-slate-400 font-medium">
+                  <span className={`text-xs font-medium ${tier.highlight ? "text-neutral-400" : "text-slate-500"}`}>
                     {tier.period}
                   </span>
                 </div>
 
                 <ul className="mt-8 space-y-3">
                   {tier.features.map((feat, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                      <Check className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5" />
+                    <li key={idx} className={`flex items-start gap-2.5 text-xs ${tier.highlight ? "text-neutral-300" : "text-slate-700"}`}>
+                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${tier.highlight ? "text-white" : "text-black font-bold"}`} />
                       <span>{feat}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className={`mt-8 pt-6 border-t ${tier.highlight ? "border-neutral-800" : "border-black/10"}`}>
                 <Link href={tier.href}>
                   <Button
-                    variant={tier.highlight ? "default" : "outline"}
-                    className={`w-full text-xs font-semibold ${
-                      tier.highlight ? "bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md" : ""
+                    className={`w-full text-xs font-bold py-2.5 transition-all border-0 ${
+                      tier.highlight
+                        ? "bg-white text-black hover:bg-neutral-200 shadow-md"
+                        : "bg-[#dedbd6] text-[#19191a] hover:bg-black hover:text-white shadow-xs"
                     }`}
                   >
                     {tier.cta}

@@ -1,13 +1,7 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { RequirementType } from "./JobRequirement";
 
 export type MatchStatus = "MATCHED" | "PARTIAL" | "NOT_FOUND" | "UNCLEAR";
-export type RequirementType =
-  | "SKILL"
-  | "EXPERIENCE"
-  | "EDUCATION"
-  | "ACADEMIC_STATUS"
-  | "CERTIFICATION"
-  | "CUSTOM";
 
 export interface IScreeningRequirementResult extends Document {
   screeningResultId: Types.ObjectId;

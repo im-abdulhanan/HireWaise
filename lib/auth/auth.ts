@@ -52,43 +52,77 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Please enter an email and password.");
+        const isDev = process.env.NODE_ENV === "development" || process.env.NODE_ENV !== "production";
+        const rawEmail = credentials?.email;
+        const normalizedEmail = rawEmail ? rawEmail.toLowerCase().trim() : "";
+
+        if (isDev) {
+          console.log(`[AUTH-LOGIN] Authorize started for email: ${normalizedEmail}`);
         }
 
-        await connectToDatabase();
-
-        const user = await User.findOne({
-          email: credentials.email.toLowerCase().trim(),
-        }).select("+passwordHash");
-
-        if (!user || !user.passwordHash) {
-          throw new Error("Invalid email or password.");
+        if (!normalizedEmail || !credentials?.password) {
+          if (isDev) {
+            console.log("[AUTH-LOGIN] Authentication failed: Missing email or password");
+          }
+          return null;
         }
 
-        const isMatch = await bcrypt.compare(
-          credentials.password,
-          user.passwordHash
-        );
+        try {
+          await connectToDatabase();
 
-        if (!isMatch) {
-          throw new Error("Invalid email or password.");
+          const user = await User.findOne({
+            email: normalizedEmail,
+          }).select("+passwordHash");
+
+          if (isDev) {
+            console.log(`[AUTH-LOGIN] User found: ${Boolean(user)}, passwordHash exists: ${Boolean(user?.passwordHash)}`);
+          }
+
+          if (!user || !user.passwordHash) {
+            if (isDev) {
+              console.log("[AUTH-LOGIN] Authentication failed: User not found or no passwordHash");
+            }
+            return null;
+          }
+
+          const isMatch = await bcrypt.compare(
+            credentials.password,
+            user.passwordHash
+          );
+
+          if (isDev) {
+            console.log(`[AUTH-LOGIN] Bcrypt comparison result: ${isMatch}`);
+            console.log(`[AUTH-LOGIN] Authentication result: ${isMatch ? "SUCCESS" : "FAILURE"}`);
+          }
+
+          if (!isMatch) {
+            return null;
+          }
+
+          // Update last login timestamp safely
+          User.updateOne(
+            { _id: user._id },
+            { $set: { lastLoginAt: new Date() } }
+          ).exec().catch((err) => {
+            if (isDev) console.error("[AUTH-LOGIN] Failed to update lastLoginAt:", err);
+          });
+
+          return {
+            id: user._id.toString(),
+            email: user.email,
+            name: user.name,
+            companyId: user.companyId ? user.companyId.toString() : "",
+            role: user.role,
+            avatarUrl: user.avatarUrl || user.image,
+            image: user.image || user.avatarUrl,
+            provider: "credentials",
+          };
+        } catch (err: any) {
+          if (isDev) {
+            console.error("[AUTH-LOGIN] Error during authorize execution:", err);
+          }
+          throw new Error(err.message || "Authentication service error");
         }
-
-        // Update last login
-        user.lastLoginAt = new Date();
-        await user.save();
-
-        return {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          companyId: user.companyId.toString(),
-          role: user.role,
-          avatarUrl: user.avatarUrl || user.image,
-          image: user.image || user.avatarUrl,
-          provider: "credentials",
-        };
       },
     }),
   ],
