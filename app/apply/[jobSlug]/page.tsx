@@ -995,7 +995,7 @@ export default function CandidateApplyPage() {
 
                 <div>
                   <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Application Submitted
+                    Application Submitted!
                   </h3>
                   <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-sm mx-auto leading-relaxed">
                     Your application has been successfully received and is now under review.
@@ -1050,7 +1050,7 @@ export default function CandidateApplyPage() {
                     }}
                     className="w-full bg-[#19191a] hover:bg-[#2b2b2d] text-white text-xs font-semibold py-2.5"
                   >
-                    <span>View Confirmation Details</span>
+                    <span>Application Submitted!</span>
                     <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
                   </Button>
                 </div>
