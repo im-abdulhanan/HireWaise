@@ -2,6 +2,37 @@ import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/ge
 import { z } from "zod";
 import { PROMPT_INJECTION_SYSTEM_GUARD } from "@/lib/security/prompt-defense";
 
+export type GeminiErrorCode =
+  | "GEMINI_API_ERROR"
+  | "GEMINI_TIMEOUT"
+  | "GEMINI_INVALID_RESPONSE"
+  | "SCHEMA_VALIDATION_FAILED"
+  | "GEMINI_QUOTA_EXCEEDED"
+  | "GEMINI_AUTH_ERROR";
+
+export class GeminiPipelineError extends Error {
+  code: GeminiErrorCode;
+  retryable: boolean;
+  stage: string;
+
+  constructor(params: {
+    code: GeminiErrorCode;
+    message: string;
+    stage?: string;
+    retryable?: boolean;
+    cause?: any;
+  }) {
+    super(params.message);
+    this.name = "GeminiPipelineError";
+    this.code = params.code;
+    this.stage = params.stage || "AI_PIPELINE";
+    this.retryable = params.retryable ?? false;
+    if (params.cause) {
+      this.cause = params.cause;
+    }
+  }
+}
+
 export interface GeminiExecutionResult<T> {
   data: T;
   telemetry: {
@@ -17,9 +48,11 @@ export interface GeminiExecutionResult<T> {
 export function getGeminiClient(): GoogleGenerativeAI {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error(
-      "GEMINI_API_KEY environment variable is not configured. Please add it to your .env file."
-    );
+    throw new GeminiPipelineError({
+      code: "GEMINI_AUTH_ERROR",
+      message: "GEMINI_API_KEY environment variable is not configured. Please add it to your .env file.",
+      retryable: false,
+    });
   }
   return new GoogleGenerativeAI(apiKey);
 }
@@ -39,7 +72,7 @@ function estimateGeminiCost(inputTokens: number, outputTokens: number): number {
  * thought delimiters, or extraneous non-JSON text.
  */
 export function cleanAndParseJSON(rawText: string): any {
-  let cleaned = rawText.trim();
+  let cleaned = (rawText || "").trim();
 
   // Strip markdown code fences if present
   if (cleaned.includes("```json")) {
@@ -54,26 +87,56 @@ export function cleanAndParseJSON(rawText: string): any {
     }
   }
 
-  // If text starts with non-JSON (e.g. conversational prefix or thinking), find outermost { ... }
+  // If text starts with non-JSON (e.g. conversational prefix or thinking), find outermost { ... } or [ ... ]
   if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
     const firstBrace = cleaned.indexOf("{");
     const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace > firstBrace) {
       cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    } else {
+      const firstBracket = cleaned.indexOf("[");
+      const lastBracket = cleaned.lastIndexOf("]");
+      if (firstBracket !== -1 && lastBracket > firstBracket) {
+        cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+      }
     }
   }
 
-  return JSON.parse(cleaned);
+  try {
+    return JSON.parse(cleaned);
+  } catch (err: any) {
+    // Attempt basic fallback repair for dangling commas or unescaped characters
+    try {
+      const relaxed = cleaned.replace(/,\s*([\]}])/g, "$1");
+      return JSON.parse(relaxed);
+    } catch {
+      throw new GeminiPipelineError({
+        code: "GEMINI_INVALID_RESPONSE",
+        message: `Failed to parse Gemini response as JSON: ${err?.message || "Invalid JSON syntax"}`,
+        retryable: true,
+      });
+    }
+  }
 }
 
 /**
  * Wraps a promise with a timeout to prevent hanging network requests.
  */
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+export function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  errorMessage: string
+): Promise<T> {
   let timeoutHandle: NodeJS.Timeout;
   const timeoutPromise = new Promise<T>((_, reject) => {
     timeoutHandle = setTimeout(() => {
-      reject(new Error(errorMessage));
+      reject(
+        new GeminiPipelineError({
+          code: "GEMINI_TIMEOUT",
+          message: errorMessage,
+          retryable: true,
+        })
+      );
     }, timeoutMs);
   });
 
@@ -83,8 +146,52 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: st
 }
 
 /**
+ * Checks whether an error is transient and eligible for retry.
+ */
+export function isRetryableGeminiError(error: any): boolean {
+  if (!error) return false;
+  if (error instanceof GeminiPipelineError && !error.retryable) {
+    return false;
+  }
+
+  const msg = (error.message || "").toLowerCase();
+  const status = error.status || error.statusCode || 0;
+
+  // Non-retryable
+  if (
+    msg.includes("api_key") ||
+    msg.includes("unauthorized") ||
+    msg.includes("forbidden") ||
+    msg.includes("quota exceeded") ||
+    status === 401 ||
+    status === 403
+  ) {
+    return false;
+  }
+
+  // Retryable: 429, 500, 503, 504, timeout, network error, invalid JSON
+  if (
+    status === 429 ||
+    status === 500 ||
+    status === 503 ||
+    status === 504 ||
+    msg.includes("timeout") ||
+    msg.includes("econnreset") ||
+    msg.includes("fetch failed") ||
+    msg.includes("overloaded") ||
+    msg.includes("rate limit") ||
+    error.code === "GEMINI_TIMEOUT" ||
+    error.code === "GEMINI_INVALID_RESPONSE"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Executes a structured prompt with Gemini, enforcing JSON output,
- * retrying transient errors, and validating output against a Zod schema.
+ * retrying transient errors with exponential backoff, and validating output against a Zod schema.
  */
 export async function generateStructuredJSON<T>(params: {
   systemPrompt: string;
@@ -107,7 +214,7 @@ export async function generateStructuredJSON<T>(params: {
 
   const maxRetries = params.maxRetries ?? 2;
   const temperature = params.temperature ?? 0.1;
-  const timeoutMs = params.timeoutMs ?? 30000; // 30 seconds timeout per attempt
+  const timeoutMs = params.timeoutMs ?? 25000; // 25 seconds timeout per call
   const client = getGeminiClient();
   const startTime = Date.now();
 
@@ -145,13 +252,29 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
 
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         try {
-          const result = await model.generateContent(params.userPrompt);
+          const generatePromise = model.generateContent(params.userPrompt);
+          const result = await withTimeout(
+            generatePromise,
+            timeoutMs,
+            `Gemini request timed out after ${timeoutMs}ms for model ${modelName}`
+          );
 
           const response = result.response;
           const text = response.text();
 
           const parsedJSON = cleanAndParseJSON(text);
-          const validatedData = params.schema.parse(parsedJSON);
+
+          let validatedData: T;
+          try {
+            validatedData = params.schema.parse(parsedJSON);
+          } catch (schemaErr: any) {
+            throw new GeminiPipelineError({
+              code: "SCHEMA_VALIDATION_FAILED",
+              message: `Zod validation failed: ${schemaErr?.message || "Invalid schema"}`,
+              retryable: false,
+              cause: schemaErr,
+            });
+          }
 
           const usageMetadata = response.usageMetadata;
           const inputTokens =
@@ -175,8 +298,10 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
           lastError = attemptErr;
           retryCount++;
 
+          const isRetryable = isRetryableGeminiError(attemptErr);
           const msg = attemptErr?.message || "";
-          // If model is not found (404) or no longer available, break to try next model in candidate list
+
+          // If model is not found (404), break to try next model in candidate list
           if (
             msg.includes("404") ||
             msg.includes("not found") ||
@@ -186,10 +311,13 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
             break;
           }
 
-          if (attempt < maxRetries) {
-            const backoffMs = 1000 * Math.pow(2, attempt);
-            await new Promise((resolve) => setTimeout(resolve, backoffMs));
+          if (!isRetryable || attempt >= maxRetries) {
+            break;
           }
+
+          // Exponential backoff: 1s, 2s
+          const backoffMs = 1000 * Math.pow(2, attempt);
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
         }
       }
     } catch (modelErr: any) {
@@ -197,9 +325,14 @@ CRITICAL: Return ONLY a valid JSON object strictly matching the requested schema
     }
   }
 
-  throw new Error(
-    `Gemini structured generation failed: ${
-      lastError?.message || String(lastError)
-    }`
-  );
+  if (lastError instanceof GeminiPipelineError) {
+    throw lastError;
+  }
+
+  throw new GeminiPipelineError({
+    code: "GEMINI_API_ERROR",
+    message: `Gemini structured generation failed: ${lastError?.message || String(lastError)}`,
+    retryable: false,
+    cause: lastError,
+  });
 }

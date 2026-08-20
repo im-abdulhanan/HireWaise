@@ -138,16 +138,16 @@ async function runTests() {
       resumeId: testResume._id,
       status: "NEW",
       screeningStatus: "PROCESSING",
-      currentStage: "RECEIVED",
-      stageProgress: 15,
+      currentStage: "RESUME_UPLOADED",
+      stageProgress: 20,
       referenceNumber: refNumber,
       appliedAt: new Date(),
     });
 
-    if (testApplication.currentStage !== "RECEIVED" || testApplication.stageProgress !== 15) {
-      throw new Error(`Expected stage RECEIVED and progress 15, got ${testApplication.currentStage} and ${testApplication.stageProgress}`);
+    if (testApplication.currentStage !== "RESUME_UPLOADED" || testApplication.stageProgress !== 20) {
+      throw new Error(`Expected stage RESUME_UPLOADED and progress 20, got ${testApplication.currentStage} and ${testApplication.stageProgress}`);
     }
-    console.log("  ✓ TEST 1 PASSED: Initial state is RECEIVED with progress 15%.");
+    console.log("  ✓ TEST 1 PASSED: Initial state is RESUME_UPLOADED with progress 20%.");
 
     // TEST 2: Status Polling Endpoint Contract
     console.log("\n[TEST 2] Verifying status endpoint contract & payload structure...");
@@ -170,7 +170,7 @@ async function runTests() {
       statusPayload.applicationId !== testApplication._id.toString() ||
       statusPayload.referenceNumber !== refNumber ||
       statusPayload.screeningStatus !== "PROCESSING" ||
-      statusPayload.currentStage !== "RECEIVED" ||
+      statusPayload.currentStage !== "RESUME_UPLOADED" ||
       statusPayload.completed !== false
     ) {
       throw new Error(`Status payload mismatch: ${JSON.stringify(statusPayload)}`);

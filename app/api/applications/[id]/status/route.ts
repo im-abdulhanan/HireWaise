@@ -52,32 +52,47 @@ export async function GET(
 
     const currentStage =
       application.currentStage ||
-      (isCompleted ? "COMPLETED" : isFailed ? "FAILED" : "RECEIVED");
+      (isCompleted ? "COMPLETED" : isFailed ? "FAILED" : "RESUME_UPLOADED");
 
+    // Canonical progress mapping:
+    // APPLICATION_SUBMITTED = 10%
+    // RESUME_UPLOADED = 20%
+    // ANALYZING_RESUME = 40%
+    // MATCHING_REQUIREMENTS = 60%
+    // VERIFYING_RESULTS = 80%
+    // COMPLETED = 100%
+    // FAILED = 100%
     let progress = application.stageProgress;
-    if (typeof progress !== "number") {
+    if (isCompleted || isFailed) {
+      progress = 100;
+    } else if (typeof progress !== "number" || progress === 0) {
       switch (currentStage) {
+        case "APPLICATION_SUBMITTED":
+        case "QUEUED":
+          progress = 10;
+          break;
+        case "RESUME_UPLOADED":
         case "RECEIVED":
-          progress = 15;
-          break;
+        case "PARSING_RESUME":
         case "FILE_PROCESSING":
-          progress = 30;
+          progress = 20;
           break;
+        case "ANALYZING_RESUME":
+        case "EXTRACTING_PROFILE":
         case "RESUME_ANALYSIS":
-          progress = 55;
+          progress = 40;
           break;
+        case "MATCHING_REQUIREMENTS":
         case "REQUIREMENT_MATCHING":
-          progress = 75;
+          progress = 60;
           break;
+        case "VERIFYING_RESULTS":
+        case "VERIFYING_EVIDENCE":
         case "EVIDENCE_VERIFICATION":
-          progress = 90;
-          break;
-        case "COMPLETED":
-        case "FAILED":
-          progress = 100;
+          progress = 80;
           break;
         default:
-          progress = 15;
+          progress = 20;
       }
     }
 
@@ -85,7 +100,7 @@ export async function GET(
       application.referenceNumber ||
       `APP-${application._id.toString().slice(-8).toUpperCase()}`;
 
-    // Return sanitized status response without exposing internal Gemini/DB error traces
+    // Return sanitized status response without exposing internal stack traces
     return NextResponse.json(
       {
         applicationId: application._id.toString(),

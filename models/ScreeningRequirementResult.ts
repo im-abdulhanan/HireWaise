@@ -2,6 +2,13 @@ import mongoose, { Schema, Document, Model, Types } from "mongoose";
 import { RequirementType } from "./JobRequirement";
 
 export type MatchStatus = "MATCHED" | "PARTIAL" | "NOT_FOUND" | "UNCLEAR";
+export type MatchMethod =
+  | "EXACT"
+  | "ALIAS"
+  | "HIERARCHICAL"
+  | "SEMANTIC"
+  | "EVIDENCE_VERIFIED"
+  | "NONE";
 
 export interface IScreeningRequirementResult extends Document {
   screeningResultId: Types.ObjectId;
@@ -15,7 +22,10 @@ export interface IScreeningRequirementResult extends Document {
   status: MatchStatus;
   evidenceQuote: string; // Exact quote from resume text
   reasoning: string; // Deterministic/AI explanation
-  confidence: number; // 0.0 to 1.0
+  confidence: number; // 0.0 to 1.0 or 0-100
+  matchMethod?: MatchMethod;
+  normalizedRequirement?: string;
+  matchedCandidateSkill?: string;
   verifiedByAi: boolean;
   scoreContribution: number;
   createdAt: Date;
@@ -71,7 +81,14 @@ const ScreeningRequirementResultSchema = new Schema<IScreeningRequirementResult>
     },
     evidenceQuote: { type: String, default: "" },
     reasoning: { type: String, required: true },
-    confidence: { type: Number, default: 0.9, min: 0, max: 1 },
+    confidence: { type: Number, default: 0.9 },
+    matchMethod: {
+      type: String,
+      enum: ["EXACT", "ALIAS", "HIERARCHICAL", "SEMANTIC", "EVIDENCE_VERIFIED", "NONE"],
+      default: "NONE",
+    },
+    normalizedRequirement: { type: String },
+    matchedCandidateSkill: { type: String },
     verifiedByAi: { type: Boolean, default: true },
     scoreContribution: { type: Number, default: 0 },
   },

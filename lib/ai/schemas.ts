@@ -119,24 +119,143 @@ export const CandidateResumeExtractionSchema = z.preprocess(
         email = "applicant@example.com";
       }
 
+      // Safe normalization for certifications (handles both string[] and object[])
+      const certifications = Array.isArray(val.certifications)
+        ? val.certifications
+            .filter(Boolean)
+            .map((cert: any) => {
+              if (typeof cert === "string") {
+                return { name: cert.trim(), issuer: "", year: "" };
+              }
+              return {
+                name: String(cert.name || cert.title || cert.certification || cert.certificate || "Certification").trim(),
+                issuer: String(cert.issuer || cert.organization || cert.authority || "").trim(),
+                year: String(cert.year || cert.date || "").trim(),
+              };
+            })
+            .filter((c: any) => c.name.length > 0)
+        : [];
+
+      // Safe normalization for education (handles strings and partial objects)
+      const education = Array.isArray(val.education)
+        ? val.education
+            .filter(Boolean)
+            .map((edu: any) => {
+              if (typeof edu === "string") {
+                return {
+                  institution: "Academic Institution",
+                  degree: edu.trim(),
+                  fieldOfStudy: "",
+                  graduationYear: "",
+                  startDate: "",
+                  endDate: "",
+                  isCurrent: false,
+                  isCompleted: false,
+                  academicStatus: "UNCLEAR" as const,
+                  academicYearLevel: "",
+                };
+              }
+              return {
+                institution: String(
+                  edu.institution || edu.school || edu.university || edu.college || edu.name || "Academic Institution"
+                ).trim(),
+                degree: String(edu.degree || edu.title || edu.qualification || "").trim(),
+                fieldOfStudy: String(edu.fieldOfStudy || edu.major || edu.department || "").trim(),
+                graduationYear: String(edu.graduationYear || edu.year || edu.passingYear || "").trim(),
+                startDate: String(edu.startDate || "").trim(),
+                endDate: String(edu.endDate || "").trim(),
+                isCurrent: Boolean(edu.isCurrent),
+                isCompleted: Boolean(edu.isCompleted),
+                academicStatus: ["GRADUATED", "FINAL_YEAR", "ENROLLED", "DROPPED_OUT", "UNCLEAR"].includes(
+                  edu.academicStatus
+                )
+                  ? edu.academicStatus
+                  : "UNCLEAR",
+                academicYearLevel: String(edu.academicYearLevel || "").trim(),
+              };
+            })
+        : [];
+
+      // Safe normalization for experience (handles strings and partial objects)
+      const experience = Array.isArray(val.experience)
+        ? val.experience
+            .filter(Boolean)
+            .map((exp: any) => {
+              if (typeof exp === "string") {
+                return {
+                  jobTitle: "Role",
+                  company: "Company",
+                  startDate: "",
+                  endDate: "",
+                  isCurrent: false,
+                  description: exp.trim(),
+                  skillsUsed: [],
+                  durationYears: 0,
+                };
+              }
+              return {
+                jobTitle: String(exp.jobTitle || exp.title || exp.role || exp.position || "Position").trim(),
+                company: String(exp.company || exp.organization || exp.employer || exp.client || "Company").trim(),
+                startDate: String(exp.startDate || "").trim(),
+                endDate: String(exp.endDate || "").trim(),
+                isCurrent: Boolean(exp.isCurrent),
+                description: String(exp.description || exp.summary || exp.responsibilities || "").trim(),
+                skillsUsed: Array.isArray(exp.skillsUsed)
+                  ? exp.skillsUsed.map((s: any) => String(s || "").trim()).filter(Boolean)
+                  : [],
+                durationYears: Number(exp.durationYears || 0),
+              };
+            })
+        : [];
+
+      // Safe normalization for projects
+      const projects = Array.isArray(val.projects)
+        ? val.projects
+            .filter(Boolean)
+            .map((proj: any) => {
+              if (typeof proj === "string") {
+                return { title: proj.trim(), description: "", url: "", technologies: [] };
+              }
+              return {
+                title: String(proj.title || proj.name || proj.project || "Project").trim(),
+                description: String(proj.description || "").trim(),
+                url: String(proj.url || proj.link || "").trim(),
+                technologies: Array.isArray(proj.technologies)
+                  ? proj.technologies.map((t: any) => String(t || "").trim()).filter(Boolean)
+                  : [],
+              };
+            })
+        : [];
+
+      // Safe string lists
+      const skills = Array.isArray(val.skills)
+        ? val.skills.map((s: any) => String(s || "").trim()).filter(Boolean)
+        : [];
+      const normalizedSkills = Array.isArray(val.normalizedSkills)
+        ? val.normalizedSkills.map((s: any) => String(s || "").trim()).filter(Boolean)
+        : skills.map((s: string) => s.toLowerCase());
+      const languages = Array.isArray(val.languages)
+        ? val.languages.map((l: any) => String(l || "").trim()).filter(Boolean)
+        : [];
+
       return {
         ...val,
         candidateName: (val.candidateName || val.name || val.fullName || "Candidate").trim(),
         email,
-        phone: String(val.phone || ""),
-        location: String(val.location || ""),
-        summary: String(val.summary || ""),
-        skills: Array.isArray(val.skills) ? val.skills : [],
-        normalizedSkills: Array.isArray(val.normalizedSkills) ? val.normalizedSkills : [],
-        experience: Array.isArray(val.experience) ? val.experience : [],
-        education: Array.isArray(val.education) ? val.education : [],
-        projects: Array.isArray(val.projects) ? val.projects : [],
-        certifications: Array.isArray(val.certifications) ? val.certifications : [],
-        languages: Array.isArray(val.languages) ? val.languages : [],
+        phone: String(val.phone || "").trim(),
+        location: String(val.location || "").trim(),
+        summary: String(val.summary || "").trim(),
+        skills,
+        normalizedSkills,
+        experience,
+        education,
+        projects,
+        certifications,
+        languages,
         totalExperienceYears: Number(
           val.totalExperienceYears ?? val.yearsOfExperience ?? val.experienceYears ?? 0
         ),
-        highestDegree: String(val.highestDegree || ""),
+        highestDegree: String(val.highestDegree || "").trim(),
       };
     }
     return val;

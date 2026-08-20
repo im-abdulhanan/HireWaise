@@ -15,13 +15,36 @@ export type ScreeningPipelineStatus =
   | "FAILED";
 
 export type ScreeningStage =
+  | "APPLICATION_SUBMITTED"
+  | "RESUME_UPLOADED"
+  | "ANALYZING_RESUME"
+  | "MATCHING_REQUIREMENTS"
+  | "VERIFYING_RESULTS"
+  | "QUEUED"
   | "RECEIVED"
+  | "PARSING_RESUME"
   | "FILE_PROCESSING"
+  | "EXTRACTING_PROFILE"
   | "RESUME_ANALYSIS"
   | "REQUIREMENT_MATCHING"
+  | "VERIFYING_EVIDENCE"
   | "EVIDENCE_VERIFICATION"
+  | "CALCULATING_SCORE"
+  | "SAVING_RESULT"
   | "COMPLETED"
   | "FAILED";
+
+export interface IScreeningAttempt {
+  attemptNumber: number;
+  startedAt: Date;
+  completedAt?: Date;
+  failedAt?: Date;
+  status: ScreeningPipelineStatus;
+  failedStage?: string;
+  errorCode?: string;
+  errorMessage?: string;
+  durationMs?: number;
+}
 
 export interface IApplication extends Document {
   companyId: Types.ObjectId;
@@ -34,11 +57,33 @@ export interface IApplication extends Document {
   stageProgress: number;
   referenceNumber?: string;
   screeningError?: string;
+  errorCode?: string;
+  attemptCount: number;
+  screeningAttempts: IScreeningAttempt[];
   appliedAt: Date;
   idempotencyKey?: string;
   createdAt: Date;
   updatedAt: Date;
 }
+
+const ScreeningAttemptSchema = new Schema<IScreeningAttempt>(
+  {
+    attemptNumber: { type: Number, required: true },
+    startedAt: { type: Date, required: true },
+    completedAt: { type: Date },
+    failedAt: { type: Date },
+    status: {
+      type: String,
+      enum: ["PENDING", "PROCESSING", "COMPLETED", "FAILED"],
+      required: true,
+    },
+    failedStage: { type: String },
+    errorCode: { type: String },
+    errorMessage: { type: String },
+    durationMs: { type: Number },
+  },
+  { _id: false }
+);
 
 const ApplicationSchema = new Schema<IApplication>(
   {
@@ -74,29 +119,44 @@ const ApplicationSchema = new Schema<IApplication>(
       type: String,
       enum: ["PENDING", "PROCESSING", "COMPLETED", "FAILED"],
       default: "PENDING",
+      index: true,
     },
     currentStage: {
       type: String,
       enum: [
+        "APPLICATION_SUBMITTED",
+        "RESUME_UPLOADED",
+        "ANALYZING_RESUME",
+        "MATCHING_REQUIREMENTS",
+        "VERIFYING_RESULTS",
+        "QUEUED",
         "RECEIVED",
+        "PARSING_RESUME",
         "FILE_PROCESSING",
+        "EXTRACTING_PROFILE",
         "RESUME_ANALYSIS",
         "REQUIREMENT_MATCHING",
+        "VERIFYING_EVIDENCE",
         "EVIDENCE_VERIFICATION",
+        "CALCULATING_SCORE",
+        "SAVING_RESULT",
         "COMPLETED",
         "FAILED",
       ],
-      default: "RECEIVED",
+      default: "APPLICATION_SUBMITTED",
     },
     stageProgress: {
       type: Number,
-      default: 15,
+      default: 10,
     },
     referenceNumber: {
       type: String,
       index: true,
     },
     screeningError: { type: String },
+    errorCode: { type: String },
+    attemptCount: { type: Number, default: 1 },
+    screeningAttempts: [ScreeningAttemptSchema],
     appliedAt: { type: Date, default: Date.now },
     idempotencyKey: { type: String, index: true },
   },

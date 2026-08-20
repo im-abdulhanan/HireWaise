@@ -18,6 +18,9 @@ yarn-error.log*
 # Local file storage / uploaded resumes
 uploads/
 scratch/
+esco_dataset/
+*.zip
+ESCO\ v1.2.1\ dataset*
 
 # OS files
 .DS_Store

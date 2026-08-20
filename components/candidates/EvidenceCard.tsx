@@ -9,13 +9,16 @@ import {
   ShieldCheck,
   FileCheck2,
 } from "lucide-react";
-import { MatchStatus } from "@/models/ScreeningRequirementResult";
+import { MatchStatus, MatchMethod } from "@/models/ScreeningRequirementResult";
 
 interface EvidenceCardProps {
   requirementTitle: string;
   category: "REQUIRED" | "PREFERRED" | "OPTIONAL";
   type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM";
   status: MatchStatus;
+  matchMethod?: MatchMethod;
+  normalizedRequirement?: string;
+  matchedCandidateSkill?: string;
   evidenceQuote?: string;
   reasoning: string;
   confidence?: number;
@@ -27,6 +30,9 @@ export function EvidenceCard({
   category,
   type,
   status,
+  matchMethod = "NONE",
+  normalizedRequirement,
+  matchedCandidateSkill,
   evidenceQuote,
   reasoning,
   confidence = 0.95,
@@ -81,9 +87,17 @@ export function EvidenceCard({
 
   const StatusIcon = statusConfig.icon;
 
-  // Determine evidence type description
+  // Determine evidence type description and explainable badge
   const evidenceTypeDesc =
-    status === "MATCHED"
+    matchMethod === "EVIDENCE_VERIFIED"
+      ? "Context verified from resume"
+      : matchMethod === "ALIAS"
+      ? "Matched via skill normalization"
+      : matchMethod === "HIERARCHICAL"
+      ? "Related skill detected"
+      : matchMethod === "SEMANTIC"
+      ? "Semantic alignment"
+      : status === "MATCHED"
       ? evidenceQuote && !evidenceQuote.startsWith("Skill verified")
         ? "Exact resume evidence"
         : "Candidate profile qualification"
@@ -118,9 +132,14 @@ export function EvidenceCard({
                 {category}
               </span>
               <span className="text-slate-300">•</span>
-              <span className="text-[10px] font-medium text-slate-600 bg-white/70 px-2 py-0.5 rounded border border-black/5">
+              <span className="text-[10px] font-medium text-slate-700 bg-white/80 px-2 py-0.5 rounded border border-black/10">
                 {evidenceTypeDesc}
               </span>
+              {normalizedRequirement && (
+                <span className="text-[9px] font-mono text-slate-400">
+                  [{normalizedRequirement}]
+                </span>
+              )}
             </div>
           </div>
         </div>

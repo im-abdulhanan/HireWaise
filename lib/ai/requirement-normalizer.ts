@@ -5,9 +5,17 @@
  * and controlled semantic relationships for production-grade resume screening.
  */
 
+import {
+  SKILL_REGISTRY,
+  getCanonicalSkillKey,
+  getSkillHierarchyRelationship,
+  cleanKeyText,
+} from "./skill-registry";
+
 export type MatchClassification =
   | "EXACT_MATCH"
   | "ALIAS_MATCH"
+  | "HIERARCHICAL_MATCH"
   | "SEMANTIC_MATCH"
   | "PARTIAL_MATCH"
   | "NO_MATCH";
@@ -26,487 +34,24 @@ export interface NormalizedRequirement {
 }
 
 /**
- * Standard Education Degree Ranks
+ * Standard Education Degree Ranks (Explicit Hierarchy)
+ * HIGH_SCHOOL < INTERMEDIATE < DIPLOMA < ASSOCIATE < BACHELOR < MASTER < PHD
  */
 export const DEGREE_RANKS: Record<string, number> = {
   high_school: 1,
   intermediate: 2,
   diploma: 3,
-  associate: 3,
-  bachelor: 4,
-  master: 5,
-  phd: 6,
-};
-
-/**
- * Canonical taxonomy of Certifications, Safety & HSE Standards, Computer & IT Skills,
- * and Technical Programming Languages.
- */
-const CANONICAL_TAXONOMY: Record<
-  string,
-  {
-    type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM";
-    aliases: string[];
-    relatedTerms: string[];
-    degreeRank?: number;
-  }
-> = {
-  // --- HSE, SAFETY & INDUSTRIAL CERTIFICATIONS ---
-  nebosh: {
-    type: "CERTIFICATION",
-    aliases: [
-      "nebosh",
-      "national examination board in occupational safety and health",
-      "national examination board in occupational safety & health",
-      "nebosh igc",
-      "nebosh international general certificate",
-      "nebosh hsw",
-      "nebosh certificate",
-      "nebosh diploma",
-      "the national examination board in occupational safety & health",
-      "the national examination board in occupational safety and health",
-    ],
-    relatedTerms: ["hse", "occupational safety", "health & safety", "iosh", "osha"],
-  },
-  osha: {
-    type: "CERTIFICATION",
-    aliases: [
-      "osha",
-      "occupational safety and health administration",
-      "occupational safety & health administration",
-      "occupational safety and health",
-      "osha 30",
-      "osha 30 hours",
-      "osha 30-hour",
-      "osha 10",
-      "osha 10 hours",
-      "osha certified",
-      "osha certification",
-      "osha general industry",
-      "osha construction",
-    ],
-    relatedTerms: ["hse", "safety officer", "health & safety", "nebosh", "iosh"],
-  },
-  iosh: {
-    type: "CERTIFICATION",
-    aliases: [
-      "iosh",
-      "institution of occupational safety and health",
-      "institution of occupational safety & health",
-      "iosh managing safely",
-      "iosh working safely",
-      "managing safely",
-      "working safely",
-    ],
-    relatedTerms: ["hse", "safety officer", "nebosh", "osha"],
-  },
-  hse: {
-    type: "SKILL",
-    aliases: [
-      "hse",
-      "ehs",
-      "she",
-      "health safety environmental",
-      "health safety environment",
-      "health, safety and environment",
-      "health, safety & environment",
-      "health safety and environmental engineering",
-      "health safety & environmental engineering",
-      "environment health safety",
-      "environmental health and safety",
-      "occupational health and safety",
-      "occupational health & safety",
-      "health & safety",
-      "health and safety",
-      "safety officer",
-      "hse officer",
-      "hse supervisor",
-      "hse engineer",
-      "safety engineer",
-    ],
-    relatedTerms: ["osha", "nebosh", "iosh", "hazard identification", "risk assessment", "incident investigation", "safety audit", "first aid"],
-  },
-  "safety and health": {
-    type: "SKILL",
-    aliases: [
-      "safety and health",
-      "safety & health",
-      "health and safety",
-      "health & safety",
-      "occupational safety and health",
-      "occupational safety & health",
-      "occupational health and safety",
-      "occupational health & safety",
-      "occupational safety",
-      "occupational health",
-      "workplace safety",
-      "industrial safety",
-    ],
-    relatedTerms: [
-      "hse",
-      "ehs",
-      "osha",
-      "nebosh",
-      "iosh",
-      "safety officer",
-      "safety inspection",
-      "risk assessment",
-      "hazard identification",
-    ],
-  },
-  iso: {
-    type: "CERTIFICATION",
-    aliases: [
-      "iso 45001",
-      "iso 14001",
-      "iso 9001",
-      "iso lead auditor",
-      "iso internal auditor",
-      "ohsas 18001",
-    ],
-    relatedTerms: ["hse", "safety audit", "quality management"],
-  },
-  "first aid": {
-    type: "CERTIFICATION",
-    aliases: ["first aid", "cpr", "basic life support", "bls", "emergency first aid"],
-    relatedTerms: ["safety officer", "hse"],
-  },
-
-  // --- COMPUTER, OFFICE & DATA SKILLS ---
-  "computer skills": {
-    type: "SKILL",
-    aliases: [
-      "computer skills",
-      "computer literacy",
-      "computer literate",
-      "basic computer skills",
-      "it skills",
-      "computer proficiency",
-      "computer applications",
-      "information technology",
-    ],
-    relatedTerms: [
-      "computer operator",
-      "data entry",
-      "ms office",
-      "microsoft office",
-      "microsoft word",
-      "microsoft excel",
-      "ms excel",
-      "ms word",
-      "excel",
-      "word",
-      "powerpoint",
-      "typing",
-      "data entry operator",
-    ],
-  },
-  "computer operator": {
-    type: "SKILL",
-    aliases: [
-      "computer operator",
-      "computer operation",
-      "computer operator / data entry",
-      "computer operator & data entry",
-      "it operator",
-    ],
-    relatedTerms: ["data entry", "ms office", "typing", "computer skills"],
-  },
-  "data entry": {
-    type: "SKILL",
-    aliases: [
-      "data entry",
-      "data entry operator",
-      "data input",
-      "data processing",
-      "data entry clerk",
-      "data entry specialist",
-      "typing",
-    ],
-    relatedTerms: ["computer operator", "ms excel", "excel", "computer skills"],
-  },
-  "ms office": {
-    type: "SKILL",
-    aliases: [
-      "ms office",
-      "microsoft office",
-      "ms-office",
-      "microsoft office suite",
-      "ms office suite",
-      "office 365",
-      "microsoft 365",
-      "ms word",
-      "microsoft word",
-      "ms excel",
-      "microsoft excel",
-      "excel",
-      "word",
-      "powerpoint",
-      "ms powerpoint",
-      "microsoft powerpoint",
-    ],
-    relatedTerms: ["computer skills", "data entry", "computer operator"],
-  },
-
-  // --- TECHNICAL & SOFTWARE ENGINEERING SKILLS ---
-  react: {
-    type: "SKILL",
-    aliases: ["react", "react.js", "reactjs", "react native", "react-native"],
-    relatedTerms: ["frontend", "javascript", "typescript", "web development", "next.js", "redux"],
-  },
-  "next.js": {
-    type: "SKILL",
-    aliases: ["next.js", "nextjs", "next", "next js"],
-    relatedTerms: ["react", "react.js", "frontend", "full stack", "ssr", "typescript"],
-  },
-  "node.js": {
-    type: "SKILL",
-    aliases: ["node.js", "nodejs", "node", "node js"],
-    relatedTerms: ["express", "express.js", "backend", "javascript", "typescript", "nest.js"],
-  },
-  typescript: {
-    type: "SKILL",
-    aliases: ["typescript", "ts"],
-    relatedTerms: ["javascript", "frontend", "backend", "react", "node.js"],
-  },
-  javascript: {
-    type: "SKILL",
-    aliases: ["javascript", "js", "ecmascript", "es6"],
-    relatedTerms: ["typescript", "frontend", "web development"],
-  },
-  python: {
-    type: "SKILL",
-    aliases: ["python", "python3", "py", "python 3"],
-    relatedTerms: ["django", "flask", "fastapi", "pandas", "numpy", "data engineering", "ai"],
-  },
-  go: {
-    type: "SKILL",
-    aliases: ["golang", "go programming", "go lang", "go language"],
-    relatedTerms: ["backend", "microservices", "docker", "kubernetes"],
-  },
-  sql: {
-    type: "SKILL",
-    aliases: [
-      "sql",
-      "postgresql",
-      "postgres",
-      "mysql",
-      "sqlite",
-      "mssql",
-      "microsoft sql server",
-      "oracle sql",
-      "relational database",
-      "rdbms",
-    ],
-    relatedTerms: ["database", "prisma", "sequelize", "typeorm", "backend"],
-  },
-  mongodb: {
-    type: "SKILL",
-    aliases: ["mongodb", "mongo", "nosql", "document database", "mongoose"],
-    relatedTerms: ["database", "backend", "node.js"],
-  },
-  aws: {
-    type: "SKILL",
-    aliases: [
-      "aws",
-      "amazon web services",
-      "amazon cloud",
-      "aws cloud",
-      "ec2",
-      "s3",
-      "lambda",
-      "aws lambda",
-    ],
-    relatedTerms: ["cloud", "devops", "gcp", "azure", "serverless"],
-  },
-  docker: {
-    type: "SKILL",
-    aliases: ["docker", "docker container", "docker containers", "containerization"],
-    relatedTerms: ["kubernetes", "k8s", "devops", "ci/cd"],
-  },
-  kubernetes: {
-    type: "SKILL",
-    aliases: ["kubernetes", "k8s"],
-    relatedTerms: ["docker", "devops", "helm", "cloud"],
-  },
-  git: {
-    type: "SKILL",
-    aliases: ["git", "github", "gitlab", "bitbucket", "version control"],
-    relatedTerms: ["devops", "ci/cd"],
-  },
-  "ci/cd": {
-    type: "SKILL",
-    aliases: ["ci/cd", "cicd", "continuous integration", "continuous deployment", "github actions", "jenkins"],
-    relatedTerms: ["devops", "git", "docker"],
-  },
-
-  // --- EDUCATION & QUALIFICATIONS ---
-  dae: {
-    type: "EDUCATION",
-    aliases: [
-      "dae",
-      "diploma of associate engineering",
-      "diploma of associate engineer",
-      "diploma in associate engineering",
-      "diploma in associate engineer",
-      "associate engineering",
-      "associate engineer",
-      "3 years diploma",
-      "3-year diploma",
-      "3 year diploma",
-      "dae mechanical",
-      "dae mechanical engineering",
-      "dae electrical",
-      "dae civil",
-      "dae chemical",
-      "dae electronics",
-      "polytechnic diploma",
-    ],
-    relatedTerms: ["diploma", "technical education", "associate engineer"],
-    degreeRank: DEGREE_RANKS.diploma,
-  },
-  diploma: {
-    type: "EDUCATION",
-    aliases: [
-      "diploma",
-      "polytechnic diploma",
-      "2-year diploma",
-      "3-year diploma",
-      "postgraduate diploma",
-      "pg diploma",
-      "national diploma",
-    ],
-    relatedTerms: ["dae", "associate degree"],
-    degreeRank: DEGREE_RANKS.diploma,
-  },
-  bachelor: {
-    type: "EDUCATION",
-    aliases: [
-      "bachelor",
-      "bachelors",
-      "bachelor's",
-      "bachelor's degree",
-      "bachelors degree",
-      "bs",
-      "b.s",
-      "bsc",
-      "b.sc",
-      "b.tech",
-      "btech",
-      "b.e",
-      "be",
-      "b.eng",
-      "beng",
-      "bba",
-      "bcs",
-      "b.cs",
-      "bcom",
-      "b.com",
-      "ba",
-      "b.a",
-      "undergraduate degree",
-      "university graduate",
-      "4-year degree",
-      "four year degree",
-    ],
-    relatedTerms: ["university degree", "undergraduate", "graduate"],
-    degreeRank: DEGREE_RANKS.bachelor,
-  },
-  master: {
-    type: "EDUCATION",
-    aliases: [
-      "master",
-      "masters",
-      "master's",
-      "master's degree",
-      "masters degree",
-      "ms",
-      "m.s",
-      "msc",
-      "m.sc",
-      "mphil",
-      "m.phil",
-      "mba",
-      "m.ba",
-      "m.tech",
-      "mtech",
-      "m.e",
-      "meng",
-      "postgraduate degree",
-      "graduate degree",
-    ],
-    relatedTerms: ["postgraduate", "university degree"],
-    degreeRank: DEGREE_RANKS.master,
-  },
-  phd: {
-    type: "EDUCATION",
-    aliases: [
-      "phd",
-      "ph.d",
-      "doctorate",
-      "doctor of philosophy",
-      "doctoral degree",
-    ],
-    relatedTerms: ["doctorate", "postgraduate"],
-    degreeRank: DEGREE_RANKS.phd,
-  },
-  intermediate: {
-    type: "EDUCATION",
-    aliases: [
-      "intermediate",
-      "fsc",
-      "f.sc",
-      "fsc pre-engineering",
-      "fsc pre-medical",
-      "ics",
-      "i.cs",
-      "fa",
-      "f.a",
-      "icom",
-      "i.com",
-      "hssc",
-      "higher secondary school certificate",
-      "higher secondary",
-      "a level",
-      "a-level",
-      "a levels",
-      "12th grade",
-      "12th class",
-      "senior secondary",
-    ],
-    relatedTerms: ["high school", "college"],
-    degreeRank: DEGREE_RANKS.intermediate,
-  },
-  "high school": {
-    type: "EDUCATION",
-    aliases: [
-      "high school",
-      "matric",
-      "matriculation",
-      "ssc",
-      "secondary school certificate",
-      "o level",
-      "o-level",
-      "o levels",
-      "10th grade",
-      "10th class",
-    ],
-    relatedTerms: ["secondary"],
-    degreeRank: DEGREE_RANKS.high_school,
-  },
+  associate: 4,
+  bachelor: 5,
+  master: 6,
+  phd: 7,
 };
 
 /**
  * Clean and normalize a requirement or skill title string into an alphanumeric key.
  */
 export function cleanKey(str: string): string {
-  if (!str) return "";
-  return str
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s.+/-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return cleanKeyText(str);
 }
 
 /**
@@ -521,7 +66,6 @@ export function escapeRegex(text: string): string {
  */
 export function buildWordBoundaryRegex(term: string): RegExp {
   const escaped = escapeRegex(term.trim());
-  // If phrase contains spaces, allow flexible whitespace / punctuation
   const flexible = escaped.replace(/\\\s+/g, "[\\s&/,-]+");
   return new RegExp(`(^|[^a-zA-Z0-9_])${flexible}([^a-zA-Z0-9_]|$)`, "i");
 }
@@ -568,7 +112,12 @@ export function normalizeRequirement(
     lower.includes("intermediate") ||
     lower.includes("dae") ||
     lower.includes("diploma") ||
-    lower.includes("high school")
+    lower.includes("high school") ||
+    lower.includes("bs cs") ||
+    lower.includes("bs computer") ||
+    lower.includes("b.sc") ||
+    lower.includes("b.s") ||
+    lower.includes("graduate")
   ) {
     type = "EDUCATION";
   } else if (
@@ -578,51 +127,100 @@ export function normalizeRequirement(
     lower.includes("certified") ||
     lower.includes("certification") ||
     lower.includes("license") ||
-    lower.includes("pmp")
+    lower.includes("pmp") ||
+    lower.includes("iso 45001") ||
+    lower.includes("first aid")
   ) {
     type = "CERTIFICATION";
   }
 
-  // Check taxonomy for match
-  let matchedTaxonomyKey = "";
-  for (const [taxKey, data] of Object.entries(CANONICAL_TAXONOMY)) {
-    if (cleaned === taxKey || data.aliases.some((a) => cleanKey(a) === cleaned)) {
-      matchedTaxonomyKey = taxKey;
-      break;
-    }
-  }
-
-  // If no direct key match, check substring/partial keyword matches in taxonomy
-  if (!matchedTaxonomyKey) {
-    for (const [taxKey, data] of Object.entries(CANONICAL_TAXONOMY)) {
-      if (
-        cleaned.includes(taxKey) ||
-        data.aliases.some((a) => cleaned.includes(cleanKey(a)) || cleanKey(a).includes(cleaned))
-      ) {
-        matchedTaxonomyKey = taxKey;
-        break;
-      }
-    }
-  }
+  // Canonical skill key from Registry
+  const canonicalKey = getCanonicalSkillKey(rawTitle);
+  const skillDef = SKILL_REGISTRY[canonicalKey];
 
   const aliasesSet = new Set<string>();
   const relatedSet = new Set<string>();
 
-  // Add raw title variations
+  // Add raw title and cleaned key
   aliasesSet.add(rawTitle.trim());
   aliasesSet.add(cleaned);
+
+  if (skillDef) {
+    skillDef.aliases.forEach((a) => aliasesSet.add(a));
+    if (skillDef.children) {
+      skillDef.children.forEach((c) => {
+        const childDef = SKILL_REGISTRY[c];
+        if (childDef) {
+          relatedSet.add(childDef.displayName);
+          childDef.aliases.forEach((ca) => relatedSet.add(ca));
+        }
+      });
+    }
+    if (skillDef.associatedEntities) {
+      skillDef.associatedEntities.forEach((e) => relatedSet.add(e));
+    }
+  }
 
   let requiredDegreeRank: number | undefined;
   let requiredDegreeLevel: string | undefined;
   let academicStatusRule: NormalizedRequirement["academicStatusRule"];
 
-  if (matchedTaxonomyKey) {
-    const tax = CANONICAL_TAXONOMY[matchedTaxonomyKey];
-    tax.aliases.forEach((a) => aliasesSet.add(a));
-    tax.relatedTerms.forEach((r) => relatedSet.add(r));
-    if (tax.degreeRank) {
-      requiredDegreeRank = tax.degreeRank;
-      requiredDegreeLevel = matchedTaxonomyKey.toUpperCase();
+  // Education rank resolution
+  if (type === "EDUCATION") {
+    if (lower.includes("phd") || lower.includes("doctorate")) {
+      requiredDegreeRank = DEGREE_RANKS.phd;
+      requiredDegreeLevel = "PHD";
+      aliasesSet.add("phd");
+      aliasesSet.add("doctorate");
+    } else if (lower.includes("master") || lower.includes("ms") || lower.includes("msc") || lower.includes("mba")) {
+      requiredDegreeRank = DEGREE_RANKS.master;
+      requiredDegreeLevel = "MASTER";
+      aliasesSet.add("master");
+      aliasesSet.add("masters");
+      aliasesSet.add("ms");
+      aliasesSet.add("msc");
+    } else if (
+      lower.includes("bachelor") ||
+      lower.includes("bs") ||
+      lower.includes("bsc") ||
+      lower.includes("undergraduate") ||
+      lower.includes("graduate") ||
+      lower.includes("b.e") ||
+      lower.includes("b.tech")
+    ) {
+      requiredDegreeRank = DEGREE_RANKS.bachelor;
+      requiredDegreeLevel = "BACHELOR";
+      aliasesSet.add("bachelor");
+      aliasesSet.add("bachelors");
+      aliasesSet.add("bs");
+      aliasesSet.add("bsc");
+      aliasesSet.add("b.sc");
+      aliasesSet.add("b.s");
+      aliasesSet.add("b.tech");
+      aliasesSet.add("b.e");
+      aliasesSet.add("bba");
+      aliasesSet.add("bcs");
+    } else if (lower.includes("dae") || lower.includes("diploma")) {
+      requiredDegreeRank = DEGREE_RANKS.diploma;
+      requiredDegreeLevel = "DIPLOMA";
+      aliasesSet.add("dae");
+      aliasesSet.add("diploma");
+      aliasesSet.add("associate engineer");
+      aliasesSet.add("diploma of associate engineering");
+    } else if (lower.includes("intermediate") || lower.includes("fsc") || lower.includes("ics") || lower.includes("hssc")) {
+      requiredDegreeRank = DEGREE_RANKS.intermediate;
+      requiredDegreeLevel = "INTERMEDIATE";
+      aliasesSet.add("intermediate");
+      aliasesSet.add("fsc");
+      aliasesSet.add("ics");
+      aliasesSet.add("hssc");
+      aliasesSet.add("a level");
+    } else if (lower.includes("high school") || lower.includes("matric") || lower.includes("ssc")) {
+      requiredDegreeRank = DEGREE_RANKS.high_school;
+      requiredDegreeLevel = "HIGH_SCHOOL";
+      aliasesSet.add("high school");
+      aliasesSet.add("matric");
+      aliasesSet.add("ssc");
     }
   }
 
@@ -676,14 +274,14 @@ export function normalizeRequirement(
       try {
         regexPatterns.push(buildWordBoundaryRegex(alias));
       } catch {
-        // Fallback for tricky characters
+        // Fallback
       }
     }
   });
 
   return {
     originalTitle: rawTitle,
-    normalizedKey: matchedTaxonomyKey || cleaned,
+    normalizedKey: canonicalKey || cleaned,
     type,
     aliases: Array.from(aliasesSet),
     relatedTerms: Array.from(relatedSet),
@@ -720,7 +318,15 @@ export function classifyMatch(
     }
   }
 
-  // 3. Controlled Semantic match
+  // 3. Hierarchical relationship match
+  const hier = getSkillHierarchyRelationship(candidateSnippet, requirementTitle);
+  if (hier.relation === "CHILD_OF_REQ") {
+    return "EXACT_MATCH";
+  } else if (hier.relation === "PARENT_OF_REQ") {
+    return "PARTIAL_MATCH";
+  }
+
+  // 4. Controlled Semantic match
   for (const term of normReq.relatedTerms) {
     const termClean = cleanKey(term);
     if (snippetClean.includes(termClean) || buildWordBoundaryRegex(term).test(candidateSnippet)) {
@@ -728,7 +334,7 @@ export function classifyMatch(
     }
   }
 
-  // 4. Token overlap partial match
+  // 5. Token overlap partial match
   const reqTokens = reqClean.split(" ").filter((t) => t.length > 2);
   const matchedTokens = reqTokens.filter((t) => snippetClean.includes(t));
   if (reqTokens.length > 0 && matchedTokens.length / reqTokens.length >= 0.5) {

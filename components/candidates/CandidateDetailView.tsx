@@ -24,6 +24,7 @@ import {
   MapPin,
   Mail,
   Phone,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,33 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
   const [notes, setNotes] = useState(data.notes || []);
   const [newNote, setNewNote] = useState("");
   const [addingNote, setAddingNote] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
+
+  const handleRetryScreening = async () => {
+    if (isRetrying || !application?.id) return;
+    setIsRetrying(true);
+    setRetryMessage(null);
+
+    try {
+      const res = await fetch(`/api/screening/${application.id}/retry`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setRetryMessage("Screening retry initiated. Refreshing...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        setRetryMessage(json.error || "Failed to trigger retry.");
+      }
+    } catch {
+      setRetryMessage("Failed to trigger screening retry.");
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,9 +218,56 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                   </Button>
                 </a>
               )}
+
+              <Button
+                variant={application.screeningStatus === "FAILED" ? "default" : "outline"}
+                size="sm"
+                onClick={handleRetryScreening}
+                disabled={isRetrying}
+                className={`gap-1.5 text-xs shadow-xs ${
+                  application.screeningStatus === "FAILED"
+                    ? "bg-[#19191a] hover:bg-[#2b2b2d] text-white"
+                    : ""
+                }`}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? "animate-spin" : ""}`} />
+                <span>{isRetrying ? "Retrying..." : "Retry Screening"}</span>
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Failed Screening Alert Banner */}
+        {application.screeningStatus === "FAILED" && (
+          <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-4 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-700 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-900">
+                  Automated Screening Incomplete
+                </p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  {application.screeningError || "Screening was paused. The candidate profile and resume are fully preserved for human review or retry."}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleRetryScreening}
+              disabled={isRetrying}
+              className="shrink-0 bg-amber-900 hover:bg-amber-950 text-white text-xs gap-1.5"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? "animate-spin" : ""}`} />
+              <span>Retry</span>
+            </Button>
+          </div>
+        )}
+
+        {retryMessage && (
+          <div className="mt-2 text-xs font-medium text-slate-700 bg-slate-100 p-2.5 rounded-lg">
+            {retryMessage}
+          </div>
+        )}
       </div>
 
       {/* Tabs Navigation */}
@@ -358,6 +433,9 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                     category={req.requirementCategory}
                     type={req.requirementType}
                     status={req.status}
+                    matchMethod={req.matchMethod}
+                    normalizedRequirement={req.normalizedRequirement}
+                    matchedCandidateSkill={req.matchedCandidateSkill}
                     evidenceQuote={req.evidenceQuote}
                     reasoning={req.reasoning}
                     confidence={req.confidence}
@@ -572,7 +650,7 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
               </div>
             </div>
 
-            {/* Weights Snapshot */}
+              {/* Weights Snapshot */}
             <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 flex items-center gap-2">
                 <Sliders className="h-4 w-4 text-[#19191a]" />
@@ -613,6 +691,50 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
               </div>
             </div>
           </div>
+
+          {/* Screening Attempt History */}
+          {application?.screeningAttempts && application.screeningAttempts.length > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-[#19191a]" />
+                Screening Attempt History ({application.screeningAttempts.length} Attempts)
+              </h3>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                      <th className="pb-2">Attempt</th>
+                      <th className="pb-2">Timestamp</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2">Failed Stage</th>
+                      <th className="pb-2">Error Code</th>
+                      <th className="pb-2">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {application.screeningAttempts.map((att: any, idx: number) => (
+                      <tr key={idx} className="py-2">
+                        <td className="py-2.5 font-bold text-slate-900">#{att.attemptNumber || idx + 1}</td>
+                        <td className="py-2.5 text-slate-600">{att.startedAt ? formatDateTime(att.startedAt) : "N/A"}</td>
+                        <td className="py-2.5">
+                          <Badge
+                            variant={att.status === "COMPLETED" ? "success" : att.status === "FAILED" ? "destructive" : "secondary"}
+                            className="text-[10px] uppercase font-bold"
+                          >
+                            {att.status}
+                          </Badge>
+                        </td>
+                        <td className="py-2.5 font-mono text-slate-600">{att.failedStage || "—"}</td>
+                        <td className="py-2.5 font-mono text-slate-600">{att.errorCode || "—"}</td>
+                        <td className="py-2.5 text-slate-600">{att.durationMs ? `${(att.durationMs / 1000).toFixed(2)}s` : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

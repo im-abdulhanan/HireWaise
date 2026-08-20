@@ -47,7 +47,7 @@ async function runMatcherUnitTests() {
   assert(daeNorm.requiredDegreeRank === DEGREE_RANKS.diploma, "DAE rank is diploma (3)");
 
   const bsNorm = normalizeRequirement("Bachelor of Science");
-  assert(bsNorm.requiredDegreeRank === DEGREE_RANKS.bachelor, "BS rank is bachelor (4)");
+  assert(bsNorm.requiredDegreeRank === DEGREE_RANKS.bachelor, "BS rank is bachelor (5)");
 
   // 2. Classification Tests
   assert(
@@ -59,7 +59,7 @@ async function runMatcherUnitTests() {
     "Classify alias match"
   );
   assert(
-    classifyMatch("Safety and Health", "Certified in HSE and OSHA") === "SEMANTIC_MATCH",
+    classifyMatch("Safety and Health", "Certified in OSHA and ISO") === "SEMANTIC_MATCH",
     "Classify controlled semantic match"
   );
   assert(

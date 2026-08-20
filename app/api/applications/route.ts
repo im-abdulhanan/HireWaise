@@ -162,11 +162,12 @@ export async function POST(req: NextRequest) {
       // Re-application or update
       application.resumeId = resume._id as Types.ObjectId;
       application.screeningStatus = "PROCESSING";
-      application.currentStage = "RECEIVED";
-      application.stageProgress = 15;
+      application.currentStage = "RESUME_UPLOADED";
+      application.stageProgress = 20;
       application.referenceNumber = referenceNumber;
       application.idempotencyKey = idempotencyKey;
       application.screeningError = undefined;
+      application.errorCode = undefined;
       await application.save();
     } else {
       application = await Application.create({
@@ -176,8 +177,8 @@ export async function POST(req: NextRequest) {
         resumeId: resume._id,
         status: "NEW",
         screeningStatus: "PROCESSING",
-        currentStage: "RECEIVED",
-        stageProgress: 15,
+        currentStage: "RESUME_UPLOADED",
+        stageProgress: 20,
         referenceNumber,
         idempotencyKey,
         appliedAt: new Date(),
@@ -192,15 +193,15 @@ export async function POST(req: NextRequest) {
 
     const responsePayload = {
       success: true,
-      message: "Application received and queued for qualification screening.",
+      message: "Application submitted and resume uploaded successfully.",
       data: {
         applicationId: appIdString,
         candidateId: candidate._id.toString(),
         jobTitle: job.title,
         referenceNumber: application.referenceNumber || referenceNumber,
-        currentStage: "RECEIVED",
+        currentStage: "RESUME_UPLOADED",
         screeningStatus: "PROCESSING",
-        progress: 15,
+        progress: 20,
         submittedAt: application.appliedAt,
       },
     };

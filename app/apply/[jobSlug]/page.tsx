@@ -30,50 +30,148 @@ import { Badge } from "@/components/ui/badge";
 
 const PIPELINE_STAGES = [
   {
-    key: "RECEIVED",
+    key: "APPLICATION_SUBMITTED",
     title: "Application submitted",
     description: "Your submission has been securely registered.",
   },
   {
-    key: "FILE_PROCESSING",
+    key: "RESUME_UPLOADED",
     title: "Resume uploaded",
-    description: "Extracting document structure and readable text.",
+    description: "Resume document stored and validated.",
   },
   {
-    key: "RESUME_ANALYSIS",
+    key: "ANALYZING_RESUME",
     title: "Analyzing your qualifications",
     description: "Reviewing work history, technical skills, and experience.",
   },
   {
-    key: "REQUIREMENT_MATCHING",
+    key: "MATCHING_REQUIREMENTS",
     title: "Matching job requirements",
     description: "Evaluating alignment against position criteria.",
   },
   {
-    key: "EVIDENCE_VERIFICATION",
+    key: "VERIFYING_RESULTS",
     title: "Verifying screening results",
     description: "Confirming verified citations for recruiter review.",
   },
 ];
 
-function getStageIndex(stage: string): number {
-  switch (stage) {
-    case "RECEIVED":
-      return 0;
-    case "FILE_PROCESSING":
-      return 1;
-    case "RESUME_ANALYSIS":
-      return 2;
-    case "REQUIREMENT_MATCHING":
-      return 3;
-    case "EVIDENCE_VERIFICATION":
-      return 4;
-    case "COMPLETED":
-    case "FAILED":
-      return 5;
-    default:
-      return 0;
+type CardStatus = "COMPLETED" | "ACTIVE" | "PENDING" | "FAILED";
+
+function getCardStatus(
+  stageKey: string,
+  currentStage: string,
+  progress: number,
+  pipelineStatus: string
+): CardStatus {
+  if (pipelineStatus === "FAILED") {
+    return "FAILED";
   }
+
+  // Normalize legacy or alternative stage identifiers
+  const normalize = (s: string) => {
+    switch (s) {
+      case "QUEUED":
+        return "APPLICATION_SUBMITTED";
+      case "RECEIVED":
+      case "FILE_PROCESSING":
+      case "PARSING_RESUME":
+        return "RESUME_UPLOADED";
+      case "EXTRACTING_PROFILE":
+      case "RESUME_ANALYSIS":
+        return "ANALYZING_RESUME";
+      case "REQUIREMENT_MATCHING":
+        return "MATCHING_REQUIREMENTS";
+      case "VERIFYING_EVIDENCE":
+      case "EVIDENCE_VERIFICATION":
+      case "CALCULATING_SCORE":
+      case "SAVING_RESULT":
+        return "VERIFYING_RESULTS";
+      default:
+        return s;
+    }
+  };
+
+  const current = normalize(currentStage);
+
+  if (current === "COMPLETED" || progress >= 100) {
+    return "COMPLETED";
+  }
+
+  // 1. APPLICATION_SUBMITTED: Always completed once registered
+  if (stageKey === "APPLICATION_SUBMITTED") {
+    return "COMPLETED";
+  }
+
+  // 2. RESUME_UPLOADED: Completed when progress >= 20 or reached RESUME_UPLOADED / later
+  if (stageKey === "RESUME_UPLOADED") {
+    if (
+      progress >= 20 ||
+      [
+        "RESUME_UPLOADED",
+        "ANALYZING_RESUME",
+        "MATCHING_REQUIREMENTS",
+        "VERIFYING_RESULTS",
+        "COMPLETED",
+      ].includes(current)
+    ) {
+      return "COMPLETED";
+    }
+    return "ACTIVE";
+  }
+
+  // 3. ANALYZING_RESUME:
+  // - Completed when progress > 40 or current is MATCHING_REQUIREMENTS / later
+  // - Active when progress == 20 or 40, or current is RESUME_UPLOADED / ANALYZING_RESUME
+  // - Pending when progress < 20
+  if (stageKey === "ANALYZING_RESUME") {
+    if (
+      progress >= 60 ||
+      ["MATCHING_REQUIREMENTS", "VERIFYING_RESULTS", "COMPLETED"].includes(current)
+    ) {
+      return "COMPLETED";
+    }
+    if (
+      progress >= 20 ||
+      ["RESUME_UPLOADED", "ANALYZING_RESUME"].includes(current)
+    ) {
+      return "ACTIVE";
+    }
+    return "PENDING";
+  }
+
+  // 4. MATCHING_REQUIREMENTS:
+  // - Completed when progress >= 80 or current is VERIFYING_RESULTS / later
+  // - Active when progress == 60 or current is MATCHING_REQUIREMENTS
+  // - Pending when progress < 60
+  if (stageKey === "MATCHING_REQUIREMENTS") {
+    if (
+      progress >= 80 ||
+      ["VERIFYING_RESULTS", "COMPLETED"].includes(current)
+    ) {
+      return "COMPLETED";
+    }
+    if (progress === 60 || current === "MATCHING_REQUIREMENTS") {
+      return "ACTIVE";
+    }
+    return "PENDING";
+  }
+
+  // 5. VERIFYING_RESULTS:
+  // - Completed when progress >= 100 or current is COMPLETED
+  // - Active when progress == 80 or current is VERIFYING_RESULTS
+  // - Pending when progress < 80
+  if (stageKey === "VERIFYING_RESULTS") {
+    if (progress >= 100 || current === "COMPLETED") {
+      return "COMPLETED";
+    }
+    if (progress === 80 || current === "VERIFYING_RESULTS") {
+      return "ACTIVE";
+    }
+    return "PENDING";
+  }
+
+  return "PENDING";
 }
 
 export default function CandidateApplyPage() {
@@ -96,16 +194,67 @@ export default function CandidateApplyPage() {
   const [dragActive, setDragActive] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
 
-  // Asynchronous Submission & Real Status Polling
+  // Asynchronous Submission & Real Status Polling (strictly driven by backend)
   const [submitting, setSubmitting] = useState(false);
   const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [currentAppId, setCurrentAppId] = useState<string | null>(null);
   const [currentRefNumber, setCurrentRefNumber] = useState<string | null>(null);
   const [screeningStatus, setScreeningStatus] = useState<"PROCESSING" | "COMPLETED" | "FAILED">("PROCESSING");
-  const [currentStage, setCurrentStage] = useState<string>("RECEIVED");
-  const [stageProgress, setStageProgress] = useState<number>(15);
+  const [currentStage, setCurrentStage] = useState<string>("APPLICATION_SUBMITTED");
+  const [stageProgress, setStageProgress] = useState<number>(10);
   const [copiedRef, setCopiedRef] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Helper to start real backend status polling
+  const startStatusPolling = (appId: string, refNum: string) => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const statusRes = await fetch(`/api/applications/${appId}/status`);
+        if (!statusRes.ok) return;
+
+        const statusData = await statusRes.json();
+
+        if (statusData.currentStage) {
+          setCurrentStage(statusData.currentStage);
+        }
+        if (typeof statusData.progress === "number") {
+          setStageProgress(statusData.progress);
+        }
+        if (statusData.screeningStatus) {
+          setScreeningStatus(statusData.screeningStatus);
+        }
+
+        // Check for pipeline completion or failure
+        if (statusData.completed || statusData.screeningStatus === "COMPLETED") {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem(`pending_app_${params.jobSlug}`);
+          }
+          setScreeningStatus("COMPLETED");
+          setStageProgress(100);
+          setCurrentStage("COMPLETED");
+        } else if (statusData.failed || statusData.screeningStatus === "FAILED") {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+          }
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem(`pending_app_${params.jobSlug}`);
+          }
+          setScreeningStatus("FAILED");
+          setStageProgress(100);
+          setCurrentStage("FAILED");
+        }
+      } catch {
+        // Network hiccup during polling - keep polling on next tick
+      }
+    }, 1500);
+  };
 
   useEffect(() => {
     async function loadJob() {
@@ -117,6 +266,26 @@ export default function CandidateApplyPage() {
           setError(json.message || "Position not found.");
         } else if (json.success) {
           setJob(json.data);
+
+          // Restore polling if applicant refreshed page during processing
+          if (typeof window !== "undefined") {
+            try {
+              const saved = sessionStorage.getItem(`pending_app_${params.jobSlug}`);
+              if (saved) {
+                const parsed = JSON.parse(saved);
+                if (parsed.appId && Date.now() - (parsed.timestamp || 0) < 15 * 60 * 1000) {
+                  setCurrentAppId(parsed.appId);
+                  setCurrentRefNumber(parsed.refNum);
+                  setShowProcessingModal(true);
+                  setSubmitting(true);
+                  setScreeningStatus("PROCESSING");
+                  startStatusPolling(parsed.appId, parsed.refNum);
+                }
+              }
+            } catch {
+              // Ignore sessionStorage parse error
+            }
+          }
         } else {
           setError(json.error || "Failed to load job details.");
         }
@@ -212,8 +381,8 @@ export default function CandidateApplyPage() {
     setSubmitting(true);
     setShowProcessingModal(true);
     setScreeningStatus("PROCESSING");
-    setCurrentStage("RECEIVED");
-    setStageProgress(15);
+    setCurrentStage("APPLICATION_SUBMITTED");
+    setStageProgress(10);
 
     const formData = new FormData();
     formData.append("jobId", job.id);
@@ -241,44 +410,18 @@ export default function CandidateApplyPage() {
       setCurrentAppId(appId);
       setCurrentRefNumber(refNum);
       if (json.data?.currentStage) setCurrentStage(json.data.currentStage);
-      if (json.data?.progress) setStageProgress(json.data.progress);
+      if (typeof json.data?.progress === "number") setStageProgress(json.data.progress);
 
-      // Start Real-Time Status Polling (every 1.2s)
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      // Save to sessionStorage for page refresh resilience
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          `pending_app_${params.jobSlug}`,
+          JSON.stringify({ appId, refNum, timestamp: Date.now() })
+        );
+      }
 
-      pollingRef.current = setInterval(async () => {
-        try {
-          const statusRes = await fetch(`/api/applications/${appId}/status`);
-          if (!statusRes.ok) return;
-
-          const statusData = await statusRes.json();
-
-          if (statusData.currentStage) {
-            setCurrentStage(statusData.currentStage);
-          }
-          if (typeof statusData.progress === "number") {
-            setStageProgress(statusData.progress);
-          }
-          if (statusData.screeningStatus) {
-            setScreeningStatus(statusData.screeningStatus);
-          }
-
-          // Check for pipeline completion or failure
-          if (statusData.completed || statusData.screeningStatus === "COMPLETED") {
-            if (pollingRef.current) clearInterval(pollingRef.current);
-            setScreeningStatus("COMPLETED");
-            setStageProgress(100);
-            setCurrentStage("COMPLETED");
-          } else if (statusData.failed || statusData.screeningStatus === "FAILED") {
-            if (pollingRef.current) clearInterval(pollingRef.current);
-            setScreeningStatus("FAILED");
-            setStageProgress(100);
-            setCurrentStage("FAILED");
-          }
-        } catch {
-          // Network hiccup during polling - retry automatically next tick
-        }
-      }, 1200);
+      // Start Real-Time Status Polling
+      startStatusPolling(appId, refNum);
     } catch (err: any) {
       if (pollingRef.current) clearInterval(pollingRef.current);
       setShowProcessingModal(false);
@@ -359,8 +502,6 @@ export default function CandidateApplyPage() {
         year: "numeric",
       })
     : null;
-
-  const activeStageIndex = getStageIndex(currentStage);
 
   return (
     <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white flex flex-col justify-between relative">
@@ -773,16 +914,18 @@ export default function CandidateApplyPage() {
 
                 {/* Multi-Stage Pipeline Checklist */}
                 <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-4">
-                  {PIPELINE_STAGES.map((stage, idx) => {
-                    const isCompleted = activeStageIndex > idx;
-                    const isCurrent = activeStageIndex === idx;
-                    const isUpcoming = activeStageIndex < idx;
+                  {PIPELINE_STAGES.map((stage) => {
+                    const status = getCardStatus(stage.key, currentStage, stageProgress, screeningStatus);
+                    const isCompleted = status === "COMPLETED";
+                    const isActive = status === "ACTIVE";
+                    const isPending = status === "PENDING";
+                    const isFailed = status === "FAILED";
 
                     return (
                       <div
                         key={stage.key}
                         className={`flex items-start gap-3 transition-opacity duration-300 ${
-                          isUpcoming ? "opacity-40" : "opacity-100"
+                          isPending ? "opacity-40" : "opacity-100"
                         }`}
                       >
                         {/* Status Icon Indicator */}
@@ -791,9 +934,13 @@ export default function CandidateApplyPage() {
                             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
                               <Check className="h-3 w-3 stroke-[3]" />
                             </div>
-                          ) : isCurrent ? (
+                          ) : isActive ? (
                             <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#19191a] text-white">
                               <div className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            </div>
+                          ) : isFailed ? (
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                              <AlertCircle className="h-3 w-3" />
                             </div>
                           ) : (
                             <div className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white">
@@ -806,10 +953,12 @@ export default function CandidateApplyPage() {
                         <div className="min-w-0">
                           <p
                             className={`text-xs leading-tight ${
-                              isCurrent
+                              isActive
                                 ? "font-bold text-[#19191a]"
                                 : isCompleted
                                 ? "font-semibold text-slate-900"
+                                : isFailed
+                                ? "font-semibold text-rose-700"
                                 : "font-normal text-slate-500"
                             }`}
                           >
@@ -830,7 +979,7 @@ export default function CandidateApplyPage() {
                     <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
                     <span>Real-time verification</span>
                   </span>
-                  <span className="font-mono text-slate-400">
+                  <span className="font-mono text-slate-700 font-bold">
                     {stageProgress}%
                   </span>
                 </div>

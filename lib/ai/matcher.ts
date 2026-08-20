@@ -2,65 +2,20 @@ import { IJob, IScoringWeights, IScreeningPolicy } from "@/models/Job";
 import { IJobRequirement } from "@/models/JobRequirement";
 import { CandidateResumeExtraction } from "./schemas";
 import { ScreeningCategory, IScoreBreakdown } from "@/models/ScreeningResult";
-import { MatchStatus } from "@/models/ScreeningRequirementResult";
+import type { MatchStatus, MatchMethod } from "@/models/ScreeningRequirementResult";
+import {
+  getCanonicalSkillKey,
+  cleanKeyText,
+  SKILL_REGISTRY,
+} from "./skill-registry";
+import { DEGREE_RANKS } from "./requirement-normalizer";
 
-// Common technical skill synonyms and aliases map for normalization
-const SKILL_ALIASES: Record<string, string> = {
-  reactjs: "react",
-  "react.js": "react",
-  nextjs: "next.js",
-  "next.js": "next.js",
-  nodejs: "node.js",
-  "node.js": "node.js",
-  expressjs: "express",
-  "express.js": "express",
-  postgres: "postgresql",
-  postgresql: "postgresql",
-  mongo: "mongodb",
-  mongodb: "mongodb",
-  k8s: "kubernetes",
-  kubernetes: "kubernetes",
-  docker: "docker",
-  aws: "aws",
-  "amazon web services": "aws",
-  gcp: "gcp",
-  "google cloud": "gcp",
-  azure: "azure",
-  ts: "typescript",
-  typescript: "typescript",
-  js: "javascript",
-  javascript: "javascript",
-  py: "python",
-  python: "python",
-  golang: "go",
-  go: "go",
-  rb: "ruby",
-  ruby: "ruby",
-  rails: "ruby on rails",
-  "ruby on rails": "ruby on rails",
-  tailwind: "tailwindcss",
-  tailwindcss: "tailwindcss",
-  vuejs: "vue",
-  "vue.js": "vue",
-  vue: "vue",
-  graphql: "graphql",
-  rest: "rest api",
-  "rest api": "rest api",
-  "restful api": "rest api",
-  ci_cd: "ci/cd",
-  "ci/cd": "ci/cd",
-  git: "git",
-  github: "git",
-  prisma: "prisma",
-  mongoose: "mongoose",
-  sql: "sql",
-  nosql: "nosql",
-};
+export type { MatchMethod, MatchStatus };
+export { DEGREE_RANKS };
 
 export function normalizeSkill(skill: string): string {
   if (!skill) return "";
-  const cleaned = skill.toLowerCase().trim().replace(/[^a-z0-9.+/ -]/g, "");
-  return SKILL_ALIASES[cleaned] || cleaned;
+  return getCanonicalSkillKey(skill);
 }
 
 export interface EvaluatedRequirement {
@@ -69,6 +24,9 @@ export interface EvaluatedRequirement {
   requirementCategory: "REQUIRED" | "PREFERRED" | "OPTIONAL";
   requirementType: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM";
   status: MatchStatus;
+  matchMethod: MatchMethod;
+  normalizedRequirement: string;
+  matchedCandidateSkill?: string;
   evidenceQuote: string;
   reasoning: string;
   confidence: number;
@@ -92,18 +50,6 @@ export interface MatchCalculationResult {
   requiredExperienceYears: number;
 }
 
-/**
- * Standard degree hierarchy rank for education level comparison.
- */
-export const DEGREE_RANKS: Record<string, number> = {
-  high_school: 1,
-  intermediate: 2,
-  diploma: 3,
-  bachelor: 4,
-  master: 5,
-  phd: 6,
-};
-
 export function getDegreeLevelAndRank(degreeText: string): { level: string; rank: number } {
   if (!degreeText) return { level: "UNKNOWN", rank: 0 };
   const lower = degreeText.toLowerCase();
@@ -123,17 +69,27 @@ export function getDegreeLevelAndRank(degreeText: string): { level: string; rank
     return { level: "MASTER", rank: DEGREE_RANKS.master };
   }
   if (
-    lower.includes("bachelor") ||
-    lower.includes("bs") ||
-    lower.includes("ba") ||
-    lower.includes("bsc") ||
-    lower.includes("b.e") ||
-    lower.includes("b.tech") ||
-    lower.includes("undergraduate") ||
-    lower.includes("bba") ||
-    lower.includes("bcs")
+    (lower.includes("bachelor") ||
+      lower.includes("bs") ||
+      lower.includes("ba") ||
+      lower.includes("bsc") ||
+      lower.includes("b.e") ||
+      lower.includes("b.tech") ||
+      lower.includes("undergraduate") ||
+      lower.includes("bba") ||
+      lower.includes("bcs") ||
+      lower.includes("bcom")) &&
+    !lower.includes("dae") &&
+    !lower.includes("diploma")
   ) {
     return { level: "BACHELOR", rank: DEGREE_RANKS.bachelor };
+  }
+  if (
+    lower.includes("associate degree") ||
+    lower.includes("adp") ||
+    lower.includes("associate of science")
+  ) {
+    return { level: "ASSOCIATE", rank: DEGREE_RANKS.associate };
   }
   if (
     lower.includes("intermediate") ||
@@ -254,17 +210,17 @@ export function evaluateAcademicStatusRequirement(params: {
       levelLower.includes("4th") ||
       levelLower.includes("senior");
 
-    if (level === "INTERMEDIATE" || level === "HIGH_SCHOOL") {
+    if (level === "INTERMEDIATE" || level === "HIGH_SCHOOL" || level === "DIPLOMA") {
       if (isExplicitCompleted || (gradYearNum && gradYearNum <= currentYear && !edu.isCurrent)) {
         isIntermediateOnlyCompleted = true;
-        intermediateQuote = `${degText || "Intermediate"} from ${instText}${
+        intermediateQuote = `${degText || level} from ${instText}${
           gradYearNum ? ` (${gradYearNum})` : ""
         }`;
       }
       continue;
     }
 
-    // University degree (Bachelor / Master / PhD)
+    // University degree (Bachelor / Master / PhD) - Rank >= 5
     if (rank >= DEGREE_RANKS.bachelor) {
       if (isExplicitFinalYear) {
         isFinalYear = true;
@@ -299,7 +255,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "MATCHED",
         evidenceQuote: graduationQuote,
         reasoning: `Candidate academic status confirmed as Graduate (${graduationQuote}). Satisfies "Final year or Graduate".`,
-        confidence: 0.95,
+        confidence: 95,
         scoreContribution: 100,
       };
     }
@@ -308,7 +264,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "MATCHED",
         evidenceQuote: finalYearQuote,
         reasoning: `Candidate academic status confirmed as Final Year student (${finalYearQuote}). Satisfies "Final year or Graduate".`,
-        confidence: 0.95,
+        confidence: 95,
         scoreContribution: 100,
       };
     }
@@ -317,7 +273,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "NOT_FOUND",
         evidenceQuote: earlyYearQuote,
         reasoning: `Candidate is currently enrolled (${earlyYearQuote}) but not in final year and has not yet graduated.`,
-        confidence: 0.92,
+        confidence: 92,
         scoreContribution: 0,
       };
     }
@@ -326,7 +282,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "NOT_FOUND",
         evidenceQuote: intermediateQuote,
         reasoning: `Candidate has completed ${intermediateQuote}, but has not reached final year or graduated from a university degree.`,
-        confidence: 0.9,
+        confidence: 90,
         scoreContribution: 0,
       };
     }
@@ -336,7 +292,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "UNCLEAR",
         evidenceQuote: sampleDegree,
         reasoning: `Resume mentions "${sampleDegree}", but graduation date or year level is not specified to verify final year or graduate status.`,
-        confidence: 0.7,
+        confidence: 70,
         scoreContribution: 40,
       };
     }
@@ -344,7 +300,7 @@ export function evaluateAcademicStatusRequirement(params: {
       status: "NOT_FOUND",
       evidenceQuote: "",
       reasoning: "No education or academic status evidence found matching Final Year or Graduate.",
-      confidence: 0.9,
+      confidence: 90,
       scoreContribution: 0,
     };
   }
@@ -356,7 +312,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "MATCHED",
         evidenceQuote: finalYearQuote,
         reasoning: `Candidate confirmed as Final Year student (${finalYearQuote}).`,
-        confidence: 0.95,
+        confidence: 95,
         scoreContribution: 100,
       };
     }
@@ -365,7 +321,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "NOT_FOUND",
         evidenceQuote: graduationQuote,
         reasoning: `Candidate has already graduated (${graduationQuote}), which does not match the requirement for current Final Year students.`,
-        confidence: 0.9,
+        confidence: 90,
         scoreContribution: 0,
       };
     }
@@ -374,7 +330,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "NOT_FOUND",
         evidenceQuote: earlyYearQuote,
         reasoning: `Candidate is currently enrolled (${earlyYearQuote}), but not in final year.`,
-        confidence: 0.92,
+        confidence: 92,
         scoreContribution: 0,
       };
     }
@@ -387,7 +343,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "MATCHED",
         evidenceQuote: graduationQuote,
         reasoning: `Candidate confirmed as University Graduate (${graduationQuote}).`,
-        confidence: 0.95,
+        confidence: 95,
         scoreContribution: 100,
       };
     }
@@ -398,7 +354,7 @@ export function evaluateAcademicStatusRequirement(params: {
         reasoning: `Candidate is currently a student (${
           isFinalYear ? "Final Year" : detectedYearName
         }) and has not graduated.`,
-        confidence: 0.92,
+        confidence: 92,
         scoreContribution: 0,
       };
     }
@@ -406,8 +362,8 @@ export function evaluateAcademicStatusRequirement(params: {
       return {
         status: "NOT_FOUND",
         evidenceQuote: intermediateQuote,
-        reasoning: `Intermediate completion (${intermediateQuote}) does not qualify as a university degree Graduate.`,
-        confidence: 0.95,
+        reasoning: `Intermediate or Diploma completion (${intermediateQuote}) does not qualify as a university degree Graduate.`,
+        confidence: 95,
         scoreContribution: 0,
       };
     }
@@ -422,7 +378,7 @@ export function evaluateAcademicStatusRequirement(params: {
         reasoning: `Candidate is currently enrolled (${
           isFinalYear ? finalYearQuote : earlyYearQuote
         }).`,
-        confidence: 0.95,
+        confidence: 95,
         scoreContribution: 100,
       };
     }
@@ -431,7 +387,7 @@ export function evaluateAcademicStatusRequirement(params: {
         status: "NOT_FOUND",
         evidenceQuote: graduationQuote,
         reasoning: "Candidate is a graduate and not currently enrolled as a student.",
-        confidence: 0.9,
+        confidence: 90,
         scoreContribution: 0,
       };
     }
@@ -444,7 +400,7 @@ export function evaluateAcademicStatusRequirement(params: {
       status: "UNCLEAR",
       evidenceQuote: sampleDegree,
       reasoning: `Resume mentions "${sampleDegree}", but academic status details are insufficient for "${title}".`,
-      confidence: 0.7,
+      confidence: 70,
       scoreContribution: 40,
     };
   }
@@ -453,7 +409,7 @@ export function evaluateAcademicStatusRequirement(params: {
     status: "NOT_FOUND",
     evidenceQuote: "",
     reasoning: `No academic status evidence found matching "${title}".`,
-    confidence: 0.9,
+    confidence: 90,
     scoreContribution: 0,
   };
 }
@@ -541,9 +497,12 @@ export function calculateDeterministicMatch(params: {
     );
 
     const status: MatchStatus = matchOutcome.status;
+    const matchMethod: MatchMethod = matchOutcome.matchMethod || "NONE";
     const evidenceQuote = matchOutcome.evidenceQuote || "";
     const reasoning = matchOutcome.reasoning;
     const confidence = matchOutcome.confidence;
+    const normalizedRequirement = matchOutcome.normalizedRequirement || getCanonicalSkillKey(title);
+    const matchedCandidateSkill = matchOutcome.matchedCandidateSkill;
 
     let scoreContribution = 0;
     if (status === "MATCHED") {
@@ -578,6 +537,9 @@ export function calculateDeterministicMatch(params: {
       requirementCategory: category,
       requirementType: type,
       status,
+      matchMethod,
+      normalizedRequirement,
+      matchedCandidateSkill,
       evidenceQuote,
       reasoning,
       confidence,
@@ -695,7 +657,7 @@ export function calculateDeterministicMatch(params: {
     overallScore,
     category,
     summary,
-    confidence: 0.95,
+    confidence: 95,
     humanReviewRecommended,
     humanReviewReasons,
     scoreBreakdown,
