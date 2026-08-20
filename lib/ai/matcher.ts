@@ -459,16 +459,17 @@ export function evaluateAcademicStatusRequirement(params: {
 }
 
 /**
- * Deterministic matching engine that compares structured candidate data against job requirements.
+ * Deterministic matching engine that compares structured candidate data and raw resume text against job requirements.
  * CRITICAL RULE: Canonical JobRequirement type and category from MongoDB are the absolute source of truth.
  */
 export function calculateDeterministicMatch(params: {
   candidate: CandidateResumeExtraction;
+  rawResumeText?: string;
   requirements: Array<IJobRequirement | any>;
   scoringWeights?: IScoringWeights;
   screeningPolicy?: IScreeningPolicy;
 }): MatchCalculationResult {
-  const { candidate, requirements } = params;
+  const { candidate, rawResumeText = "", requirements } = params;
   const weights: IScoringWeights = params.scoringWeights || {
     requiredSkillsWeight: 40,
     experienceWeight: 25,
@@ -483,15 +484,6 @@ export function calculateDeterministicMatch(params: {
     educationRequired: false,
     humanReviewBelowScore: 75,
   };
-
-  // Build normalized skill lookup set for candidate
-  const candidateSkillsSet = new Set<string>();
-  const rawSkillsList = candidate.skills || [];
-  rawSkillsList.forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
-  (candidate.normalizedSkills || []).forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
-  (candidate.experience || []).forEach((exp) => {
-    (exp.skillsUsed || []).forEach((s) => candidateSkillsSet.add(normalizeSkill(s)));
-  });
 
   const evaluatedRequirements: EvaluatedRequirement[] = [];
 
@@ -508,164 +500,78 @@ export function calculateDeterministicMatch(params: {
 
   const humanReviewReasons: string[] = [];
 
+  // Import evidence-matcher dynamically or use the standard function
+  const { matchRequirementAgainstResume } = require("./evidence-matcher");
+
   for (const req of requirements) {
     // CANONICAL FIELDS FROM MONGODB JOB REQUIREMENT
-    const reqId = req._id ? req._id.toString() : (req.id || `req-${Math.random()}`);
+    const reqId = req._id ? req._id.toString() : req.id || `req-${Math.random()}`;
     const title = req.title;
     const category: "REQUIRED" | "PREFERRED" | "OPTIONAL" = req.category || "REQUIRED";
     const type: "SKILL" | "EXPERIENCE" | "EDUCATION" | "ACADEMIC_STATUS" | "CERTIFICATION" | "CUSTOM" =
       req.type || "SKILL";
-    const normKey = req.normalizedKey ? normalizeSkill(req.normalizedKey) : normalizeSkill(title);
 
-    let status: MatchStatus = "NOT_FOUND";
-    let reasoning = "";
-    let evidenceQuote = "";
-    let confidence = 0.9;
-    let scoreContribution = 0;
-
-    if (type === "ACADEMIC_STATUS") {
-      const evalRes = evaluateAcademicStatusRequirement({
-        title,
-        normalizedKey: normKey,
-        candidate,
-      });
-      status = evalRes.status;
-      reasoning = evalRes.reasoning;
-      evidenceQuote = evalRes.evidenceQuote;
-      confidence = evalRes.confidence;
-      scoreContribution = evalRes.scoreContribution;
-
-      if (category === "REQUIRED" && status === "UNCLEAR") {
-        humanReviewReasons.push(`Academic status is unclear from resume evidence: "${title}".`);
-      }
-    } else if (type === "SKILL") {
-      const isRequired = category === "REQUIRED";
-      if (isRequired) requiredSkillsTotal++;
-      else if (category === "PREFERRED") preferredSkillsTotal++;
-
-      // Check candidate skills profile
-      const exactSkillFound = rawSkillsList.find(
-        (s) => normalizeSkill(s) === normKey || normalizeSkill(s).includes(normKey) || normKey.includes(normalizeSkill(s))
-      );
-
-      const hasExactSkill = Boolean(exactSkillFound) || candidateSkillsSet.has(normKey);
-
-      if (hasExactSkill) {
-        status = "MATCHED";
-        const matchedSkillName = exactSkillFound || title;
-        evidenceQuote = `Skill verified in candidate profile: "${matchedSkillName}"`;
-        reasoning = `Found direct match for skill "${title}" in candidate technical profile.`;
-        confidence = 0.95;
-        scoreContribution = 100;
-        if (isRequired) requiredSkillsMatched++;
-        else if (category === "PREFERRED") preferredSkillsMatched++;
-      } else {
-        // Look through experience descriptions for partial mentions
-        const matchingExp = (candidate.experience || []).find((exp) =>
-          (exp.description || "").toLowerCase().includes(normKey)
-        );
-        if (matchingExp) {
-          status = "PARTIAL";
-          const snippet = matchingExp.description.slice(0, 140).trim();
-          evidenceQuote = `"${snippet}..." (${matchingExp.jobTitle || "Role"} at ${matchingExp.company || "Company"})`;
-          reasoning = `Skill "${title}" mentioned in project/experience description at ${matchingExp.company}.`;
-          confidence = 0.75;
-          scoreContribution = 60;
-          if (isRequired) requiredSkillsMatched += 0.6;
-          else if (category === "PREFERRED") preferredSkillsMatched += 0.6;
-        } else {
-          status = "NOT_FOUND";
-          evidenceQuote = "";
-          reasoning = `No mention of "${title}" found in candidate resume.`;
-          confidence = 0.9;
-          scoreContribution = 0;
-        }
-      }
-    } else if (type === "EXPERIENCE") {
-      const minYears = req.minimumValue || 0;
-      requiredExpYears = Math.max(requiredExpYears, minYears);
-
-      if (candidateExpYears >= minYears) {
-        status = "MATCHED";
-        reasoning = `Candidate has ${candidateExpYears} years of experience, meeting or exceeding the required ${minYears} years.`;
-        evidenceQuote = `Total detected experience: ${candidateExpYears} years across ${
-          candidate.experience?.length || 0
-        } roles.`;
-        confidence = 0.95;
-        scoreContribution = 100;
-      } else if (candidateExpYears >= minYears * 0.7) {
-        status = "PARTIAL";
-        reasoning = `Candidate has ${candidateExpYears} years of experience, slightly below the requested ${minYears} years.`;
-        evidenceQuote = `Total detected experience: ${candidateExpYears} years.`;
-        confidence = 0.85;
-        scoreContribution = Math.round((candidateExpYears / minYears) * 100);
-        humanReviewReasons.push(
-          `Experience shortfall: ${candidateExpYears} yrs detected vs ${minYears} yrs required.`
-        );
-      } else {
-        status = "NOT_FOUND";
-        reasoning = `Candidate has ${candidateExpYears} years of experience, below the required ${minYears} years.`;
-        evidenceQuote = `Total detected experience: ${candidateExpYears} years.`;
-        confidence = 0.9;
-        scoreContribution = Math.round((candidateExpYears / minYears) * 100);
-      }
-    } else if (type === "EDUCATION") {
-      const targetRank = getDegreeLevelAndRank(title).rank;
-      const highestCandidate = candidate.highestDegree
-        ? getDegreeLevelAndRank(candidate.highestDegree)
-        : candidate.education && candidate.education[0]?.degree
-        ? getDegreeLevelAndRank(candidate.education[0].degree)
-        : { level: "UNKNOWN", rank: 0 };
-
-      if (highestCandidate.rank >= targetRank && highestCandidate.rank > 0) {
-        status = "MATCHED";
-        const candidateDeg = candidate.education?.[0]?.degree || candidate.highestDegree || "Degree";
-        const candidateInst = candidate.education?.[0]?.institution || "University";
-        evidenceQuote = `${candidateDeg} from ${candidateInst}`;
-        reasoning = `Candidate holds a qualifying degree (${candidateDeg}) satisfying the degree-level requirement.`;
-        confidence = 0.92;
-        scoreContribution = 100;
-      } else if (candidate.education && candidate.education.length > 0) {
-        status = "PARTIAL";
-        const candidateDeg = candidate.education[0]?.degree || "Diploma";
-        reasoning = `Candidate holds education credentials (${candidateDeg}) which may partially satisfy requirement.`;
-        evidenceQuote = `${candidateDeg} from ${candidate.education[0]?.institution || "College"}`;
-        confidence = 0.75;
-        scoreContribution = 60;
-      } else {
-        status = "NOT_FOUND";
-        evidenceQuote = "";
-        reasoning = `No matching degree found for "${title}".`;
-        confidence = 0.85;
-        scoreContribution = 0;
-      }
-    } else {
-      // CERTIFICATION or CUSTOM
-      otherTotal++;
-      const normTitle = normalizeSkill(title);
-      const certFound = (candidate.certifications || []).find(
-        (c) =>
-          normalizeSkill(c.name).includes(normTitle) ||
-          normTitle.includes(normalizeSkill(c.name))
-      );
-
-      if (certFound) {
-        status = "MATCHED";
-        otherMatched++;
-        evidenceQuote = `Certification: ${certFound.name}${certFound.issuer ? ` by ${certFound.issuer}` : ""}`;
-        reasoning = `Candidate holds verified certification matching "${title}".`;
-        confidence = 0.95;
-        scoreContribution = 100;
-      } else {
-        status = "NOT_FOUND";
-        evidenceQuote = "";
-        reasoning = `No certification or custom evidence found for "${title}".`;
-        confidence = 0.85;
-        scoreContribution = 0;
-      }
+    if (type === "EXPERIENCE") {
+      requiredExpYears = Math.max(requiredExpYears, req.minimumValue || 0);
     }
 
-    // PUSH STRICT CANONICAL DATA
+    const isRequired = category === "REQUIRED";
+    const isPreferred = category === "PREFERRED";
+
+    if (type === "SKILL") {
+      if (isRequired) requiredSkillsTotal++;
+      else if (isPreferred) preferredSkillsTotal++;
+    } else if (type === "CERTIFICATION" || type === "CUSTOM") {
+      otherTotal++;
+    }
+
+    // Run Multi-Layer Evidence-First Matcher
+    const matchOutcome = matchRequirementAgainstResume(
+      {
+        _id: reqId,
+        id: reqId,
+        title,
+        type,
+        category,
+        minimumValue: req.minimumValue,
+        description: req.description,
+      },
+      rawResumeText,
+      candidate
+    );
+
+    const status: MatchStatus = matchOutcome.status;
+    const evidenceQuote = matchOutcome.evidenceQuote || "";
+    const reasoning = matchOutcome.reasoning;
+    const confidence = matchOutcome.confidence;
+
+    let scoreContribution = 0;
+    if (status === "MATCHED") {
+      scoreContribution = 100;
+      if (type === "SKILL") {
+        if (isRequired) requiredSkillsMatched++;
+        else if (isPreferred) preferredSkillsMatched++;
+      } else if (type === "CERTIFICATION" || type === "CUSTOM") {
+        otherMatched++;
+      }
+    } else if (status === "PARTIAL") {
+      scoreContribution = 60;
+      if (type === "SKILL") {
+        if (isRequired) requiredSkillsMatched += 0.6;
+        else if (isPreferred) preferredSkillsMatched += 0.6;
+      } else if (type === "CERTIFICATION" || type === "CUSTOM") {
+        otherMatched += 0.6;
+      }
+    } else if (status === "UNCLEAR") {
+      scoreContribution = 40;
+    } else {
+      scoreContribution = 0;
+    }
+
+    if (category === "REQUIRED" && (status === "UNCLEAR" || status === "PARTIAL")) {
+      humanReviewReasons.push(`Review required for "${title}": ${reasoning}`);
+    }
+
     evaluatedRequirements.push({
       jobRequirementId: reqId,
       requirementTitle: title,
@@ -690,7 +596,9 @@ export function calculateDeterministicMatch(params: {
       ? Math.min(100, Math.round((candidateExpYears / requiredExpYears) * 100))
       : 100;
 
-  const educationReqs = evaluatedRequirements.filter((r) => r.requirementType === "EDUCATION" || r.requirementType === "ACADEMIC_STATUS");
+  const educationReqs = evaluatedRequirements.filter(
+    (r) => r.requirementType === "EDUCATION" || r.requirementType === "ACADEMIC_STATUS"
+  );
   const educationScore =
     educationReqs.length > 0
       ? Math.round(
@@ -704,9 +612,7 @@ export function calculateDeterministicMatch(params: {
       : 100;
 
   const otherScore =
-    otherTotal > 0
-      ? Math.min(100, Math.round((otherMatched / otherTotal) * 100))
-      : 100;
+    otherTotal > 0 ? Math.min(100, Math.round((otherMatched / otherTotal) * 100)) : 100;
 
   // Calculate Overall Weighted Score
   const totalWeight =
@@ -762,7 +668,7 @@ export function calculateDeterministicMatch(params: {
 
   if (!meetsPolicy || overallScore < 50) {
     category = "DOES_NOT_MEET_STATED_REQUIREMENTS";
-  } else if (overallScore >= 80) {
+  } else if (overallScore >= 75) {
     category = "STRONG_MATCH";
   } else {
     category = "POSSIBLE_MATCH";
@@ -781,13 +687,15 @@ export function calculateDeterministicMatch(params: {
     otherScore,
   };
 
-  const summary = `Candidate scored ${overallScore}/100 (${category.replace("_", " ")}). Matched ${requiredSkillsMatched}/${requiredSkillsTotal} required skills, ${candidateExpYears} yrs experience (required: ${requiredExpYears} yrs).`;
+  const summary = `Candidate scored ${overallScore}/100 (${category.replace(/_/g, " ")}). Matched ${Math.round(
+    requiredSkillsMatched
+  )}/${requiredSkillsTotal} required skills, ${candidateExpYears} yrs experience (required: ${requiredExpYears} yrs).`;
 
   return {
     overallScore,
     category,
     summary,
-    confidence: 0.92,
+    confidence: 0.95,
     humanReviewRecommended,
     humanReviewReasons,
     scoreBreakdown,

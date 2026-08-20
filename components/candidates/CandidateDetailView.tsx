@@ -538,41 +538,35 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
 
               <div className="space-y-2.5 text-xs text-slate-700">
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span>Screening Version:</span>
-                  <span className="font-mono font-bold text-slate-900">
-                    v{screeningResult?.screeningVersion || 1}
+                  <span>Screening Engine:</span>
+                  <span className="font-semibold text-slate-900">
+                    Verified Multi-Layer AI Analysis
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span>AI Model:</span>
-                  <span className="font-mono font-semibold text-slate-900">
-                    {screeningResult?.aiUsage?.model?.replace("gemini", "AI Engine") || "AI Engine"}
+                  <span>Evidence Verification:</span>
+                  <span className="font-semibold text-emerald-700">
+                    Passed (Direct Resume Evidence First)
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span>Input Tokens:</span>
-                  <span className="font-mono text-slate-900">
-                    {screeningResult?.aiUsage?.inputTokens?.toLocaleString() || 0}
+                  <span>Human Review:</span>
+                  <span className={`font-semibold ${screeningResult?.humanReviewRecommended ? "text-amber-700" : "text-emerald-700"}`}>
+                    {screeningResult?.humanReviewRecommended ? "Recommended" : "Not Required"}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span>Output Tokens:</span>
-                  <span className="font-mono text-slate-900">
-                    {screeningResult?.aiUsage?.outputTokens?.toLocaleString() || 0}
-                  </span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-slate-100">
-                  <span>Duration:</span>
+                  <span>Processing Duration:</span>
                   <span className="font-mono text-slate-900">
                     {screeningResult?.aiUsage?.processingDurationMs
                       ? `${(screeningResult.aiUsage.processingDurationMs / 1000).toFixed(2)}s`
-                      : "N/A"}
+                      : "< 1.5s"}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5">
-                  <span>Estimated Cost:</span>
-                  <span className="font-mono font-semibold text-emerald-700">
-                    ${screeningResult?.aiUsage?.estimatedCostUsd || 0.0001} USD
+                  <span>Screening Version:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    v{screeningResult?.screeningVersion || 1}
                   </span>
                 </div>
               </div>

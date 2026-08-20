@@ -163,7 +163,7 @@ export async function runScreeningPipeline(
       await resume.save();
     }
 
-    // STAGE 3: REQUIREMENT_MATCHING (Deterministic Rule Matching)
+    // STAGE 3: REQUIREMENT_MATCHING (Deterministic Evidence-First Rule Matching)
     console.log(`[SCREENING PIPELINE] MATCHING START - Requirements Count: ${requirements.length}`);
     await Application.findByIdAndUpdate(applicationId, {
       currentStage: "REQUIREMENT_MATCHING",
@@ -173,6 +173,7 @@ export async function runScreeningPipeline(
 
     const deterministicMatch = calculateDeterministicMatch({
       candidate: candidateData,
+      rawResumeText: rawText,
       requirements,
       scoringWeights: job.scoringWeights,
       screeningPolicy: job.screeningPolicy,
@@ -187,7 +188,7 @@ export async function runScreeningPipeline(
     let humanReviewRecommended = deterministicMatch.humanReviewRecommended;
     let humanReviewReasons = [...deterministicMatch.humanReviewReasons];
 
-    // STAGE 4: EVIDENCE_VERIFICATION (Gemini Evidence Verification & Audit)
+    // STAGE 4: EVIDENCE_VERIFICATION (Gemini Evidence Verification & Consistency Audit)
     if (!skipVerificationAi && requirements.length > 0) {
       console.log(`[SCREENING PIPELINE] VERIFICATION START`);
       await Application.findByIdAndUpdate(applicationId, {
@@ -208,61 +209,35 @@ export async function runScreeningPipeline(
         retryCount += verifyResult.telemetry.retryCount;
 
         const auditReport = verifyResult.data;
-        finalConfidence = auditReport.overallConfidence;
-        if (auditReport.humanReviewRecommended) {
-          humanReviewRecommended = true;
-          humanReviewReasons.push(...auditReport.humanReviewReasons);
-        }
 
-        // Merge AI verified evidence quotes and statuses STRICTLY BY REQUIREMENT ID
-        finalEvaluatedRequirements = finalEvaluatedRequirements.map((r) => {
-          const auditItem =
-            auditReport.verifiedRequirements.find(
-              (v) => v.requirementId && v.requirementId === r.jobRequirementId
-            ) ||
-            auditReport.verifiedRequirements.find(
-              (v) =>
-                v.requirementTitle &&
-                v.requirementTitle.toLowerCase() === r.requirementTitle.toLowerCase()
-            );
-
-          if (auditItem) {
-            // Anti-Cross-Contamination Guard:
-            // Ensure evidenceQuote is actually relevant to this requirement type
-            let cleanEvidence = auditItem.evidenceQuote || r.evidenceQuote;
-            if (r.requirementType === "SKILL") {
-              const lowerEvidence = (cleanEvidence || "").toLowerCase();
-              const lowerTitle = r.requirementTitle.toLowerCase();
-              // If the evidence quote is solely an education/degree quote with no mention of the skill, discard it
-              if (
-                (lowerEvidence.includes("bachelor") ||
-                  lowerEvidence.includes("degree") ||
-                  lowerEvidence.includes("university") ||
-                  lowerEvidence.includes("intermediate")) &&
-                !lowerEvidence.includes(lowerTitle)
-              ) {
-                cleanEvidence = r.evidenceQuote; // Keep clean deterministic skill evidence
-              }
-            }
-
-            return {
-              ...r,
-              status: auditItem.status,
-              evidenceQuote: cleanEvidence,
-              reasoning: auditItem.reasoning || r.reasoning,
-              confidence: auditItem.confidence,
-              verifiedByAi: true,
-            };
-          }
-          return r;
+        // Run Evidence Consistency Audit: LLM can never downgrade exact/alias resume matches
+        const { auditEvidenceConsistency } = require("./evidence-auditor");
+        const auditRes = auditEvidenceConsistency({
+          evaluatedRequirements: deterministicMatch.matchedRequirements,
+          rawResumeText: rawText,
+          geminiVerifications: auditReport.verifiedRequirements,
         });
-        console.log(`[SCREENING PIPELINE] VERIFICATION COMPLETE`);
+
+        finalEvaluatedRequirements = auditRes.requirements;
+        finalConfidence = auditRes.overallConfidence;
+        if (auditRes.humanReviewRecommended) {
+          humanReviewRecommended = true;
+          humanReviewReasons.push(...auditRes.humanReviewReasons);
+        }
+        console.log(`[SCREENING PIPELINE] VERIFICATION & CONSISTENCY AUDIT COMPLETE`);
       } catch (verifyErr: any) {
         console.warn(
           `[SCREENING PIPELINE] Verification step warning (using deterministic evidence):`,
           verifyErr?.message
         );
       }
+    } else {
+      const { auditEvidenceConsistency } = require("./evidence-auditor");
+      const auditRes = auditEvidenceConsistency({
+        evaluatedRequirements: deterministicMatch.matchedRequirements,
+        rawResumeText: rawText,
+      });
+      finalEvaluatedRequirements = auditRes.requirements;
     }
 
     // STAGE 5: Create Immutable Snapshots & AI Telemetry

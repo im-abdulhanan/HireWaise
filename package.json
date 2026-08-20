@@ -12,7 +12,10 @@
     "test:auth": "tsx tests/auth-flow.test.ts",
     "test:apply": "tsx tests/application-submission.test.ts",
     "test:settings": "tsx tests/job-screening-settings.test.ts",
-    "test:integrity": "tsx tests/cross-contamination-integrity.test.ts"
+    "test:integrity": "tsx tests/cross-contamination-integrity.test.ts",
+    "test:accuracy": "tsx tests/resume-accuracy.test.ts",
+    "test:matcher": "tsx tests/matcher.test.ts",
+    "test:auditor": "tsx tests/evidence-auditor.test.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
