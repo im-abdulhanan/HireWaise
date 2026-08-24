@@ -213,8 +213,8 @@ export function CandidateDetailView({ data }: CandidateDetailViewProps) {
                   rel="noopener noreferrer"
                 >
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs shadow-xs">
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Resume</span>
+                    <FileText className="h-3.5 w-3.5" />
+                    <span>View Resume</span>
                   </Button>
                 </a>
               )}
