@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, User } from "lucide-react";
 import { CandidateDetailView } from "@/components/candidates/CandidateDetailView";
@@ -9,10 +9,22 @@ import { CandidateDetailView } from "@/components/candidates/CandidateDetailView
 export default function CandidateDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const getBackUrl = () => {
+    if (from === "all_candidates") {
+      return "/dashboard/candidates";
+    }
+    if (from) {
+      return `/dashboard/jobs/${params.id}/candidates?from=${encodeURIComponent(from)}`;
+    }
+    return `/dashboard/jobs/${params.id}/candidates`;
+  };
 
   useEffect(() => {
     async function loadCandidate() {
@@ -57,7 +69,7 @@ export default function CandidateDetailPage() {
         <p className="text-xs text-slate-500 mt-1 mb-6">
           {error || "The requested candidate profile does not exist or you do not have permission to view it."}
         </p>
-        <Link href="/dashboard/candidates">
+        <Link href={getBackUrl()}>
           <button className="text-xs font-semibold text-[#19191a] hover:underline">
             ← Return to Candidates
           </button>
@@ -70,8 +82,9 @@ export default function CandidateDetailPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
         <Link
-          href={`/dashboard/jobs/${params.id}/candidates`}
+          href={getBackUrl()}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          title="Back to Candidates"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>

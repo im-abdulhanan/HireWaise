@@ -158,10 +158,10 @@ export default function JobOverviewPage() {
             </Button>
           </Link>
 
-          <Link href={`/dashboard/jobs/${job.id}/candidates`}>
+          <Link href={`/dashboard/jobs/${job.id}/candidates?from=details`}>
             <Button size="sm" className="gap-1.5 shadow-sm">
               <Users className="h-3.5 w-3.5" />
-              Candidates ({job.applicationsCount || 0})
+              <span>Candidates ({job.applicationsCount || 0})</span>
             </Button>
           </Link>
 

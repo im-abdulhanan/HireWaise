@@ -90,6 +90,11 @@ export function JobCard({
             <div className="flex items-center gap-2 flex-wrap">
               <Link
                 href={`/dashboard/jobs/${job.id}`}
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem("jobs_studio_scroll_y", String(window.scrollY));
+                  }
+                }}
                 className="text-base font-semibold text-slate-900 hover:text-[#19191a] transition-colors line-clamp-1"
               >
                 {job.title}
@@ -166,7 +171,14 @@ export function JobCard({
 
       {/* Actions footer */}
       <div className="mt-5 flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
-        <Link href={`/dashboard/jobs/${job.id}/candidates`}>
+        <Link
+          href={`/dashboard/jobs/${job.id}/candidates?from=jobs`}
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("jobs_studio_scroll_y", String(window.scrollY));
+            }
+          }}
+        >
           <Button
             variant="ghost"
             size="sm"
@@ -178,14 +190,28 @@ export function JobCard({
         </Link>
 
         <div className="flex items-center gap-1.5">
-          <Link href={`/dashboard/jobs/${job.id}/edit`}>
+          <Link
+            href={`/dashboard/jobs/${job.id}/edit`}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("jobs_studio_scroll_y", String(window.scrollY));
+              }
+            }}
+          >
             <Button variant="outline" size="sm" className="gap-1 text-xs px-2.5">
               <Edit className="h-3.5 w-3.5 text-slate-500" />
               <span>Edit</span>
             </Button>
           </Link>
 
-          <Link href={`/dashboard/jobs/${job.id}`}>
+          <Link
+            href={`/dashboard/jobs/${job.id}`}
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("jobs_studio_scroll_y", String(window.scrollY));
+              }
+            }}
+          >
             <Button size="sm" variant="outline" className="text-xs px-2.5">
               Details
             </Button>

@@ -155,7 +155,7 @@ export default function GlobalCandidatesPage() {
                     >
                       <td className="px-5 py-4">
                         <Link
-                          href={`/dashboard/jobs/${c.jobId || c.job?.id}/candidates/${c.candidateId || c.id}`}
+                          href={`/dashboard/jobs/${c.jobId || c.job?.id}/candidates/${c.candidateId || c.id}?from=all_candidates`}
                           className="font-bold text-slate-900 hover:text-[#19191a] transition-colors text-sm"
                         >
                           {c.name}
@@ -233,7 +233,7 @@ export default function GlobalCandidatesPage() {
 
                       <td className="px-5 py-4 text-right">
                         <Link
-                          href={`/dashboard/jobs/${c.jobId || c.job?.id}/candidates/${c.candidateId || c.id}`}
+                          href={`/dashboard/jobs/${c.jobId || c.job?.id}/candidates/${c.candidateId || c.id}?from=all_candidates`}
                         >
                           <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs text-[#19191a] hover:text-black">
                             <span>Evidence</span>

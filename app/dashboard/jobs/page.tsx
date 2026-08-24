@@ -31,6 +31,21 @@ export default function JobsListPage() {
     fetchJobs();
   }, []);
 
+  // Restore scroll position when returning from Candidates or Details
+  useEffect(() => {
+    if (!loading && typeof window !== "undefined") {
+      const savedScroll = sessionStorage.getItem("jobs_studio_scroll_y");
+      if (savedScroll) {
+        // Use requestAnimationFrame and setTimeout to ensure DOM has painted job cards
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            window.scrollTo({ top: Number(savedScroll), behavior: "instant" });
+          }, 50);
+        });
+      }
+    }
+  }, [loading]);
+
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

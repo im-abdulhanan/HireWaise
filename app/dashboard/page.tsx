@@ -261,7 +261,7 @@ export default function DashboardOverviewPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3.5 text-right">
-                            <Link href={`/dashboard/jobs/${app.jobId || app.job?._id}/candidates/${app.candidateId || app.candidate?._id || app.id}`}>
+                            <Link href={`/dashboard/jobs/${app.jobId || app.job?._id}/candidates/${app.candidateId || app.candidate?._id || app.id}?from=dashboard`}>
                               <Button size="sm" variant="ghost" className="h-7 text-xs text-[#19191a] hover:text-black">
                                 Review
                               </Button>
@@ -313,7 +313,7 @@ export default function DashboardOverviewPage() {
                       {job.totalApplications || 0} candidates
                     </span>
                     <Link
-                      href={`/dashboard/jobs/${job.id || job._id}/candidates`}
+                      href={`/dashboard/jobs/${job.id || job._id}/candidates?from=dashboard`}
                       className="text-[#19191a] font-semibold hover:underline"
                     >
                       View list →

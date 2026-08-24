@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -20,6 +20,8 @@ import { formatDate } from "@/lib/utils";
 export default function JobCandidatesPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const from = searchParams.get("from");
 
   const [job, setJob] = useState<any>(null);
   const [candidates, setCandidates] = useState<any[]>([]);
@@ -93,6 +95,30 @@ export default function JobCandidatesPage() {
       return 0;
     });
 
+  const getBackUrl = () => {
+    if (from === "jobs") {
+      return "/dashboard/jobs";
+    }
+    if (from === "details") {
+      return `/dashboard/jobs/${params.id}`;
+    }
+    if (from === "dashboard") {
+      return "/dashboard";
+    }
+    if (from === "all_candidates") {
+      return "/dashboard/candidates";
+    }
+    // Safe default fallback
+    return `/dashboard/jobs/${params.id}`;
+  };
+
+  const getCandidateDetailUrl = (candRefId: string) => {
+    if (from) {
+      return `/dashboard/jobs/${params.id}/candidates/${candRefId}?from=${encodeURIComponent(from)}`;
+    }
+    return `/dashboard/jobs/${params.id}/candidates/${candRefId}`;
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -109,8 +135,9 @@ export default function JobCandidatesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link
-            href={`/dashboard/jobs/${params.id}`}
+            href={getBackUrl()}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            title={from === "jobs" ? "Back to Jobs Studio" : "Back to Job Details"}
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -178,7 +205,7 @@ export default function JobCandidatesPage() {
                     <tr key={c.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="px-5 py-4">
                         <Link
-                          href={`/dashboard/jobs/${params.id}/candidates/${c.candidateId || c.id}`}
+                          href={getCandidateDetailUrl(c.candidateId || c.id)}
                           className="font-bold text-slate-900 hover:text-[#19191a] transition-colors text-sm"
                         >
                           {c.name}
@@ -251,7 +278,7 @@ export default function JobCandidatesPage() {
 
                       <td className="px-5 py-4 text-right">
                         <Link
-                          href={`/dashboard/jobs/${params.id}/candidates/${c.candidateId || c.id}`}
+                          href={getCandidateDetailUrl(c.candidateId || c.id)}
                         >
                           <Button size="sm" variant="ghost" className="h-8 gap-1 text-xs text-[#19191a] hover:text-black">
                             <span>Evidence</span>
