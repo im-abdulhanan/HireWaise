@@ -997,16 +997,16 @@ export default function CandidateApplyPage() {
                   <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                     Application Submitted!
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-1.5 max-w-sm mx-auto leading-relaxed">
-                    Your application has been successfully received and is now under review.
+                  <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
+                    Thank you{name.trim() ? `, ${name.trim()}` : ""}. Your resume and application have been received and processed.
                   </p>
                 </div>
 
-                {/* Reference ID Card */}
+                {/* Reference Number Card */}
                 {currentRefNumber && (
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                      Application Reference ID
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Application Reference Number
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-1">
                       <span className="font-mono font-extrabold text-base sm:text-lg text-slate-900 tracking-wide">
@@ -1028,15 +1028,22 @@ export default function CandidateApplyPage() {
                   </div>
                 )}
 
-                {/* Verification Confirmation Points */}
-                <div className="text-left space-y-2.5 text-xs text-slate-600 bg-slate-50/50 rounded-2xl p-4 border border-slate-100">
+                {/* What Happens Next Section */}
+                <div className="text-left space-y-3 pt-3 pb-2 text-xs text-slate-600 border-t border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    What Happens Next:
+                  </h4>
                   <div className="flex items-start gap-2.5">
-                    <FileCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Qualifications audited against role requirements</span>
+                    <FileCheck className="h-4 w-4 text-[#19191a] shrink-0 mt-0.5" />
+                    <span>
+                      Our automated engine analyzed your experience against stated qualifications to prepare an objective evidence summary.
+                    </span>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Evidence summary prepared for hiring team human review</span>
+                    <span>
+                      The recruiting team will review your application. All final interview and hiring decisions remain 100% human.
+                    </span>
                   </div>
                 </div>
 
@@ -1044,14 +1051,32 @@ export default function CandidateApplyPage() {
                 <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button
                     onClick={() => {
+                      if (pollingRef.current) {
+                        clearInterval(pollingRef.current);
+                        pollingRef.current = null;
+                      }
+                      if (typeof window !== "undefined") {
+                        sessionStorage.removeItem(`pending_app_${params.jobSlug}`);
+                      }
                       setShowProcessingModal(false);
                       setSubmitting(false);
-                      router.push(`/apply/${params.jobSlug}/success?ref=${encodeURIComponent(currentRefNumber || "")}&name=${encodeURIComponent(name)}`);
+                      setName("");
+                      setEmail("");
+                      setPhone("");
+                      setLocation("");
+                      setResumeFile(null);
+                      setConsentChecked(false);
+                      setCurrentAppId(null);
+                      setCurrentRefNumber(null);
+                      setScreeningStatus("PROCESSING");
+                      setCurrentStage("APPLICATION_SUBMITTED");
+                      setStageProgress(10);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="w-full bg-[#19191a] hover:bg-[#2b2b2d] text-white text-xs font-semibold py-2.5"
+                    variant="outline"
+                    className="w-full text-xs font-semibold py-2.5 hover:bg-slate-100 transition-colors"
                   >
-                    <span>Application Submitted!</span>
-                    <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                    Back to Job Post
                   </Button>
                 </div>
               </div>
