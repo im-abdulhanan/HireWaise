@@ -6,7 +6,7 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "ScreenAI | Production-Grade AI Resume Screening & Candidate Matching",
+  title: "HireWise | Production-Grade AI Resume Screening & Candidate Matching",
   description:
     "Automate the initial screening of job applications with explainable AI evidence, deterministic matching rules, and instant Google Sheets synchronization.",
 };

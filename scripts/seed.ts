@@ -24,7 +24,7 @@ import GoogleIntegration from "../models/GoogleIntegration";
 import { Types } from "mongoose";
 
 async function seedDatabase() {
-  console.log("🌱 Starting Database Seed for ScreenAI SaaS...\n");
+  console.log("🌱 Starting Database Seed for HireWise SaaS...\n");
 
   await connectToDatabase();
 

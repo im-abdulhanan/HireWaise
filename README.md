@@ -1,6 +1,6 @@
-# ScreenAI — Production-Ready AI Resume Screening & Candidate Matching SaaS
+# HireWise — Production-Ready AI Resume Screening & Candidate Matching SaaS
 
-ScreenAI is an enterprise-ready, B2B SaaS platform that automates initial candidate screening and qualification verification for recruitment teams. It combines **deterministic matching rules**, **AI-powered evidence quote extraction**, **strict multi-tenant data isolation**, and **live 17-column Google Sheets synchronization**.
+HireWise is an enterprise-ready, B2B SaaS platform that automates initial candidate screening and qualification verification for recruitment teams. It combines **deterministic matching rules**, **AI-powered evidence quote extraction**, **strict multi-tenant data isolation**, and **live 17-column Google Sheets synchronization**.
 
 ---
 

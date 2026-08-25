@@ -5,57 +5,39 @@ import { Button } from "@/components/ui/button";
 export function PricingSection() {
   const tiers = [
     {
-      name: "Starter",
-      price: "$49",
+      name: "Free Plan",
+      price: "$0",
       period: "/month",
-      desc: "Perfect for growing startups and boutique recruiting agencies.",
+      desc: "Perfect for getting started with AI-assisted candidate screening.",
       highlight: false,
       features: [
         "Up to 3 Active Job Positions",
-        "250 Candidate Screenings / mo",
+        "50 Candidate Screenings / mo",
         "Deterministic Matching & AI Parsing",
         "Evidence Citations & Reasonings",
         "17-Column Google Sheets Sync",
         "1 Recruiter Seat",
       ],
-      cta: "Start Free Trial",
+      cta: "Get Started Free",
       href: "/signup",
     },
     {
-      name: "Growth",
-      price: "$149",
+      name: "Upgrade to Pro",
+      price: "$10",
       period: "/month",
-      desc: "For scaling engineering and recruiting teams handling high applicant volume.",
+      desc: "For recruiters and growing teams needing higher screening volume and custom policies.",
       highlight: true,
-      badge: "Most Popular",
+      badge: "Recommended",
       features: [
-        "Up to 15 Active Job Positions",
-        "2,000 Candidate Screenings / mo",
+        "Unlimited Active Job Positions",
+        "1,000 Candidate Screenings / mo",
         "Custom Scoring Weights & Strict Policies",
         "Evidence Verification Engine",
         "Automatic Real-Time Google Sheets Sync",
         "Unlimited Recruiter Seats",
         "Candidate Notes & Human Decision Audits",
       ],
-      cta: "Get Started with Growth",
-      href: "/signup",
-    },
-    {
-      name: "Enterprise",
-      price: "$499",
-      period: "/month",
-      desc: "For high-volume talent acquisition organizations requiring bespoke ATS integration.",
-      highlight: false,
-      features: [
-        "Unlimited Active Job Positions",
-        "Unlimited Candidate Screenings",
-        "Dedicated AI Enterprise API Quota",
-        "Custom ATS Integrations (Greenhouse, Lever)",
-        "Single Sign-On (SSO / SAML)",
-        "SOC2 Compliance Reports & 99.9% SLA",
-        "Dedicated Account Architect",
-      ],
-      cta: "Contact Sales",
+      cta: "Upgrade to Pro",
       href: "/signup",
     },
   ];
@@ -75,7 +57,7 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-4xl mx-auto">
           {tiers.map((tier) => (
             <div
               key={tier.name}

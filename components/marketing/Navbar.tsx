@@ -33,7 +33,7 @@ export function MarketingNavbar() {
             <Sparkles className="h-5 w-5 text-purple-300" />
           </div>
           <span className="text-lg font-bold tracking-tight text-white">
-            ScreenAI
+            HireWise
           </span>
         </Link>
 

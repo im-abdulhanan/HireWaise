@@ -134,13 +134,13 @@ export default function HomePage() {
 
             <div className="lg:col-span-6 rounded-3xl border border-neutral-800 bg-black text-white p-8 sm:p-10 shadow-xl space-y-4">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
-                The ScreenAI Solution
+                The HireWise Solution
               </span>
               <h3 className="text-xl sm:text-2xl font-bold text-white">
                 Deterministic Rule Precision + AI Verification
               </h3>
               <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
-                ScreenAI bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by AI-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
+                HireWise bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by AI-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function HomePage() {
                 Enterprise 17-Column Live Google Sheets Sync
               </h2>
               <p className="text-sm text-slate-700 leading-relaxed">
-                Keep your hiring team and stakeholders in sync without logging into another dashboard. Connect your Google account and ScreenAI automatically updates candidate scores, evidence quotes, and recruiter pipeline statuses.
+                Keep your hiring team and stakeholders in sync without logging into another dashboard. Connect your Google account and HireWise automatically updates candidate scores, evidence quotes, and recruiter pipeline statuses.
               </p>
               <div className="pt-2 flex flex-wrap gap-2">
                 <span className="rounded-lg bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1 border border-emerald-200">
@@ -186,7 +186,7 @@ export default function HomePage() {
               <div className="flex items-center justify-between pb-3 border-b border-black/10">
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet className="h-5 w-5 text-emerald-700" />
-                  <span className="font-bold text-xs text-slate-900">ScreenAI Live Pipeline Sheet</span>
+                  <span className="font-bold text-xs text-slate-900">HireWise Live Pipeline Sheet</span>
                 </div>
                 <span className="text-[11px] text-emerald-800 font-medium bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200">
                   Live Synced

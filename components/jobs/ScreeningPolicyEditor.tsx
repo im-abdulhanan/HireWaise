@@ -662,7 +662,7 @@ export function ScreeningPolicyEditor({
         {showAdvanced && (
           <div className="p-5 pt-0 border-t border-slate-100 text-xs text-slate-600 space-y-3">
             <p>
-              ScreenAI utilizes a deterministic multi-stage mathematical evaluation engine. Individual requirement matches are calculated against candidate extracted tokens and verified against verbatim resume excerpts.
+              HireWise utilizes a deterministic multi-stage mathematical evaluation engine. Individual requirement matches are calculated against candidate extracted tokens and verified against verbatim resume excerpts.
             </p>
             <div className="bg-slate-50 p-3 rounded-lg font-mono text-[11px] text-slate-700">
               Overall Score = (SkillMatch × W_skills + ExpMatch × W_exp + EduMatch × W_edu + PrefMatch × W_pref + OtherMatch × W_other) / TotalWeight

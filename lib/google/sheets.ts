@@ -62,7 +62,7 @@ export function formatCandidateRowForSheet(data: CandidateSheetRowData): string[
  */
 export async function createScreeningSpreadsheet(
   companyId: string,
-  spreadsheetTitle = "ScreenAI - Candidate Screening Pipeline"
+  spreadsheetTitle = "HireWise - Candidate Screening Pipeline"
 ): Promise<{ spreadsheetId: string; spreadsheetUrl: string }> {
   const { oauth2Client, integration } = await getAuthenticatedGoogleClient(companyId);
 

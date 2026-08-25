@@ -86,7 +86,7 @@ function LoginFormContent() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#19191a] text-white shadow-md">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-xl font-bold text-[#19191a] tracking-tight">ScreenAI</span>
+            <span className="text-xl font-bold text-[#19191a] tracking-tight">HireWise</span>
           </Link>
         </div>
         <h2 className="mt-6 text-center text-2xl font-bold tracking-tight text-slate-900">

@@ -315,7 +315,7 @@ export default function GoogleSheetsIntegrationPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Spreadsheet Title</p>
-                    <p className="text-sm font-bold text-slate-900 mt-0.5">{data.spreadsheetTitle || "ScreenAI Screening Results"}</p>
+                    <p className="text-sm font-bold text-slate-900 mt-0.5">{data.spreadsheetTitle || "HireWise Screening Results"}</p>
                   </div>
 
                   {data.spreadsheetUrl && (
@@ -361,7 +361,7 @@ export default function GoogleSheetsIntegrationPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
             <h4 className="text-sm font-bold text-slate-900 mb-2">Standardized 17-Column Data Schema</h4>
             <p className="text-xs text-slate-500 mb-4">
-              ScreenAI exports candidate screening records strictly formatted into 17 standardized columns:
+              HireWise exports candidate screening records strictly formatted into 17 standardized columns:
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">

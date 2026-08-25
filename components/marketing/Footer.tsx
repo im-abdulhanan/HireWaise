@@ -13,7 +13,7 @@ export function MarketingFooter() {
                 <Sparkles className="h-4 w-4" />
               </div>
               <span className="text-lg font-bold text-white tracking-tight">
-                Hirewise
+                HireWise
               </span>
             </div>
             <p className="text-xs text-neutral-500 max-w-sm leading-relaxed">

@@ -53,7 +53,7 @@ export function WorkflowSection() {
             From Raw Job Description to Verified Candidate Shortlist
           </h2>
           <p className="text-sm sm:text-base text-slate-600 mt-3">
-            Say goodbye to keyword buzzword bingo. ScreenAI pairs deterministic rule precision with transparent AI evidence auditing.
+            Say goodbye to keyword buzzword bingo. HireWise pairs deterministic rule precision with transparent AI evidence auditing.
           </p>
         </div>
 

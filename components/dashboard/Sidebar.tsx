@@ -41,7 +41,9 @@ export function Sidebar({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("screenai_sidebar_collapsed");
+      const saved =
+        localStorage.getItem("hirewise_sidebar_collapsed") ??
+        localStorage.getItem("screenai_sidebar_collapsed");
       if (saved !== null) {
         setInternalCollapsed(saved === "true");
       }
@@ -60,7 +62,7 @@ export function Sidebar({
       const nextVal = !internalCollapsed;
       setInternalCollapsed(nextVal);
       try {
-        localStorage.setItem("screenai_sidebar_collapsed", String(nextVal));
+        localStorage.setItem("hirewise_sidebar_collapsed", String(nextVal));
       } catch {
         // Ignore
       }
@@ -107,7 +109,7 @@ export function Sidebar({
               "flex items-center gap-3 min-w-0 transition-opacity",
               isCollapsed && "justify-center"
             )}
-            title={isCollapsed ? `ScreenAI - ${companyName}` : undefined}
+            title={isCollapsed ? `HireWise - ${companyName}` : undefined}
           >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#19191a] text-white shadow-xs">
               <Sparkles className="h-5 w-5" />
@@ -115,7 +117,7 @@ export function Sidebar({
             {!isCollapsed && (
               <div className="min-w-0 animate-in fade-in duration-200">
                 <span className="font-bold text-[#19191a] tracking-tight text-base block truncate">
-                  ScreenAI
+                  HireWise
                 </span>
                 <span className="block text-xs font-medium text-slate-500 truncate max-w-[130px]">
                   {companyName}

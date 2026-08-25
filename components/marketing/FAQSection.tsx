@@ -6,20 +6,20 @@ import { ChevronDown, HelpCircle } from "lucide-react";
 export function FAQSection() {
   const faqs = [
     {
-      q: "How does ScreenAI prevent AI hallucinations when screening resumes?",
-      a: "ScreenAI implements a strict zero-hallucination verification stage. Every qualification match must be backed by a verbatim quote extracted from the source resume text. If evidence is ambiguous or missing, the system strictly marks the requirement as UNCLEAR or NOT_FOUND rather than guessing.",
+      q: "How does HireWise prevent AI hallucinations when screening resumes?",
+      a: "HireWise implements a strict zero-hallucination verification stage. Every qualification match must be backed by a verbatim quote extracted from the source resume text. If evidence is ambiguous or missing, the system strictly marks the requirement as UNCLEAR or NOT_FOUND rather than guessing.",
     },
     {
-      q: "Does ScreenAI make autonomous hiring or rejection decisions?",
-      a: "No. ScreenAI is an explainable decision-support tool. It outputs objective evidence summaries, dimension scores, and review recommendations. Human recruiters retain 100% control to set candidate pipeline statuses (NEW, UNDER_REVIEW, SHORTLISTED, INTERVIEWING, REJECTED, HIRED).",
+      q: "Does HireWise make autonomous hiring or rejection decisions?",
+      a: "No. HireWise is an explainable decision-support tool. It outputs objective evidence summaries, dimension scores, and review recommendations. Human recruiters retain 100% control to set candidate pipeline statuses (NEW, UNDER_REVIEW, SHORTLISTED, INTERVIEWING, REJECTED, HIRED).",
     },
     {
       q: "How does the 17-column Google Sheets integration work?",
-      a: "You connect your Google Drive via standard OAuth 2.0 with AES-256 encrypted tokens. With one click, ScreenAI creates a structured 17-column Google Spreadsheet and synchronizes candidate match scores, matched/missing skills, evidence quotes, and recruiter pipeline statuses in real time.",
+      a: "You connect your Google Drive via standard OAuth 2.0 with AES-256 encrypted tokens. With one click, HireWise creates a structured 17-column Google Spreadsheet and synchronizes candidate match scores, matched/missing skills, evidence quotes, and recruiter pipeline statuses in real time.",
     },
     {
       q: "What file formats and sizes are supported?",
-      a: "ScreenAI supports PDF and Microsoft Word (DOCX) files up to 10MB each. Every upload is validated through binary magic-byte inspection to prevent malformed or malicious files.",
+      a: "HireWise supports PDF and Microsoft Word (DOCX) files up to 10MB each. Every upload is validated through binary magic-byte inspection to prevent malformed or malicious files.",
     },
     {
       q: "How is candidate PII and company data secured?",
