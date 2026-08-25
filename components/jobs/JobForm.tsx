@@ -582,8 +582,8 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
         onWeightsChange={setWeights}
       />
 
-      {/* Bottom Sticky Action Bar */}
-      <div className="sticky bottom-4 z-20 flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur-md">
+      {/* Bottom Action Bar (at end of form) */}
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
         <Button
           type="button"
           variant="outline"
