@@ -424,16 +424,13 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
                 </div>
                 <span className="text-xs text-slate-400 font-medium px-1">to</span>
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400 font-mono">
-                    {getCurrency(salaryCurrency).symbol}
-                  </span>
                   <Input
                     type="number"
                     min="0"
                     placeholder="Max amount"
                     value={salaryMax}
                     onChange={(e) => setSalaryMax(e.target.value)}
-                    className="pl-8 text-xs font-medium"
+                    className="text-xs font-medium"
                   />
                 </div>
               </div>

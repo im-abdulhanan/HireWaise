@@ -78,50 +78,50 @@ async function runCurrencySalaryTests() {
   // Pakistani Rupee
   const pkrFormatted = formatSalaryRange(100000, 150000, "PKR");
   assert(
-    pkrFormatted === "₨100,000 – ₨150,000 PKR",
-    `PKR format: "${pkrFormatted}" matches "₨100,000 – ₨150,000 PKR"`
+    pkrFormatted === "₨100,000 – 150,000 PKR",
+    `PKR format: "${pkrFormatted}" matches "₨100,000 – 150,000 PKR"`
   );
 
   // US Dollar
   const usdFormatted = formatSalaryRange(80000, 100000, "USD");
   assert(
-    usdFormatted === "$80,000 – $100,000 USD",
-    `USD format: "${usdFormatted}" matches "$80,000 – $100,000 USD"`
+    usdFormatted === "$80,000 – 100,000 USD",
+    `USD format: "${usdFormatted}" matches "$80,000 – 100,000 USD"`
   );
 
   // Euro
   const eurFormatted = formatSalaryRange(60000, 75000, "EUR");
   assert(
-    eurFormatted === "€60,000 – €75,000 EUR",
-    `EUR format: "${eurFormatted}" matches "€60,000 – €75,000 EUR"`
+    eurFormatted === "€60,000 – 75,000 EUR",
+    `EUR format: "${eurFormatted}" matches "€60,000 – 75,000 EUR"`
   );
 
   // Indian Rupee
   const inrFormatted = formatSalaryRange(800000, 1000000, "INR");
   assert(
-    inrFormatted === "₹800,000 – ₹1,000,000 INR",
-    `INR format: "${inrFormatted}" matches "₹800,000 – ₹1,000,000 INR"`
+    inrFormatted === "₹800,000 – 1,000,000 INR",
+    `INR format: "${inrFormatted}" matches "₹800,000 – 1,000,000 INR"`
   );
 
   // British Pound
   const gbpFormatted = formatSalaryRange(50000, 70000, "GBP");
   assert(
-    gbpFormatted === "£50,000 – £70,000 GBP",
-    `GBP format: "${gbpFormatted}" matches "£50,000 – £70,000 GBP"`
+    gbpFormatted === "£50,000 – 70,000 GBP",
+    `GBP format: "${gbpFormatted}" matches "£50,000 – 70,000 GBP"`
   );
 
   // Saudi Riyal
   const sarFormatted = formatSalaryRange(15000, 25000, "SAR");
   assert(
-    sarFormatted === "ر.س15,000 – ر.س25,000 SAR",
-    `SAR format: "${sarFormatted}" matches "ر.س15,000 – ر.س25,000 SAR"`
+    sarFormatted === "ر.س15,000 – 25,000 SAR",
+    `SAR format: "${sarFormatted}" matches "ر.س15,000 – 25,000 SAR"`
   );
 
   // UAE Dirham
   const aedFormatted = formatSalaryRange(18000, 28000, "AED");
   assert(
-    aedFormatted === "د.إ18,000 – د.إ28,000 AED",
-    `AED format: "${aedFormatted}" matches "د.إ18,000 – د.إ28,000 AED"`
+    aedFormatted === "د.إ18,000 – 28,000 AED",
+    `AED format: "${aedFormatted}" matches "د.إ18,000 – 28,000 AED"`
   );
 
   // Single Min or Max bounds

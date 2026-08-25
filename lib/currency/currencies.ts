@@ -95,29 +95,33 @@ export function searchCurrencies(query: string): CurrencyConfig[] {
   );
 }
 
+export function formatPlainAmount(amount: number): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      maximumFractionDigits: 0,
+    }).format(amount);
+  } catch {
+    return amount.toLocaleString();
+  }
+}
+
 /**
  * Format a single numeric salary amount with standard grouping and symbol.
  * Example: formatSalaryAmount(150000, "PKR") -> "₨150,000"
  */
 export function formatSalaryAmount(amount: number, currencyCode?: string): string {
   const cur = getCurrency(currencyCode);
-  try {
-    const formatted = new Intl.NumberFormat("en-US", {
-      maximumFractionDigits: 0,
-    }).format(amount);
-    return `${cur.symbol}${formatted}`;
-  } catch {
-    return `${cur.symbol}${amount.toLocaleString()}`;
-  }
+  const formatted = formatPlainAmount(amount);
+  return `${cur.symbol}${formatted}`;
 }
 
 /**
  * Format a salary range for display on candidate job applications and recruiter dashboards.
  * Examples:
- * - formatSalaryRange(100000, 150000, "PKR") -> "₨100,000 – ₨150,000 PKR"
- * - formatSalaryRange(80000, 100000, "USD") -> "$80,000 – $100,000 USD"
- * - formatSalaryRange(60000, 75000, "EUR") -> "€60,000 – €75,000 EUR"
- * - formatSalaryRange(800000, 1000000, "INR") -> "₹800,000 – ₹1,000,000 INR"
+ * - formatSalaryRange(100000, 150000, "PKR") -> "₨100,000 – 150,000 PKR"
+ * - formatSalaryRange(80000, 100000, "USD") -> "$80,000 – 100,000 USD"
+ * - formatSalaryRange(60000, 75000, "EUR") -> "€60,000 – 75,000 EUR"
+ * - formatSalaryRange(800000, 1000000, "INR") -> "₹800,000 – 1,000,000 INR"
  * - formatSalaryRange(100000, undefined, "PKR") -> "From ₨100,000 PKR"
  * - formatSalaryRange(undefined, 150000, "PKR") -> "Up to ₨150,000 PKR"
  */
@@ -136,7 +140,8 @@ export function formatSalaryRange(
     if (minVal === maxVal) {
       return `${formatSalaryAmount(minVal, code)} ${code}`;
     }
-    return `${formatSalaryAmount(minVal, code)} – ${formatSalaryAmount(maxVal, code)} ${code}`;
+    // Symbol only on left side, right side has plain number
+    return `${formatSalaryAmount(minVal, code)} – ${formatPlainAmount(maxVal)} ${code}`;
   }
 
   if (minVal) {
