@@ -105,10 +105,10 @@ export function PricingSection() {
               <div className={`mt-8 pt-6 border-t ${tier.highlight ? "border-neutral-800" : "border-black/10"}`}>
                 <Link href={tier.href}>
                   <Button
-                    className={`w-full text-xs font-bold py-2.5 transition-all border-0 ${
+                    className={`w-full text-xs font-bold py-2.5 transition-all ${
                       tier.highlight
-                        ? "bg-white text-black hover:bg-neutral-200 shadow-md"
-                        : "bg-[#dedbd6] text-[#19191a] hover:bg-black hover:text-white shadow-xs"
+                        ? "bg-white text-black hover:bg-neutral-200 shadow-md border-0"
+                        : "bg-[#dedbd6] text-[#19191a] border border-black/20 hover:border-black hover:bg-black hover:text-white shadow-xs"
                     }`}
                   >
                     {tier.cta}
