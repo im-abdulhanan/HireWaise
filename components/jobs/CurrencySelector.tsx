@@ -64,12 +64,11 @@ export function CurrencySelector({
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen(!open)}
-        className="flex h-10 items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-black disabled:cursor-not-allowed disabled:opacity-50 min-w-[135px]"
+        className="flex h-10 items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-2xs hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-black disabled:cursor-not-allowed disabled:opacity-50 min-w-[110px]"
       >
         <div className="flex items-center gap-1.5 truncate">
           <span className="text-sm">{selectedCurrency.flag}</span>
           <span className="font-bold">{selectedCurrency.code}</span>
-          <span className="text-slate-400 font-mono">({selectedCurrency.symbol})</span>
         </div>
         <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
       </button>
@@ -103,7 +102,7 @@ export function CurrencySelector({
                       onChange(c.code);
                       setOpen(false);
                     }}
-                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors text-left ${
+                    className={`flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-xs transition-colors text-left ${
                       isSelected
                         ? "bg-slate-100 font-bold text-slate-900"
                         : "text-slate-700 hover:bg-slate-50"
@@ -116,14 +115,9 @@ export function CurrencySelector({
                         ({c.code})
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                      <span className="font-bold text-slate-800 text-xs font-mono">
-                        {c.symbol}
-                      </span>
-                      {isSelected && (
-                        <Check className="h-3.5 w-3.5 text-black shrink-0" />
-                      )}
-                    </div>
+                    {isSelected && (
+                      <Check className="h-3.5 w-3.5 text-black shrink-0 ml-2" />
+                    )}
                   </button>
                 );
               })
