@@ -132,14 +132,14 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="lg:col-span-6 rounded-3xl border border-black/15 bg-[#dedbd6] p-8 sm:p-10 shadow-xs space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">
+            <div className="lg:col-span-6 rounded-3xl border border-neutral-800 bg-black text-white p-8 sm:p-10 shadow-xl space-y-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
                 The ScreenAI Solution
               </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
+              <h3 className="text-xl sm:text-2xl font-bold text-white">
                 Deterministic Rule Precision + AI Verification
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+              <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
                 ScreenAI bridges the gap. We run deterministic qualification evaluations with customizable scoring weights, backed by AI-powered verbatim quote extraction. Every score is 100% explainable and verifiable by your human recruiters.
               </p>
             </div>
