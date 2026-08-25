@@ -21,6 +21,7 @@ import {
   FileQuestion,
   Calendar,
   Check,
+  Copy,
   FileCheck,
   Banknote,
 } from "lucide-react";
