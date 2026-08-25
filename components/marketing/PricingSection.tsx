@@ -43,7 +43,7 @@ export function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-[#e7e5e2] border-t border-black/10">
+    <section id="pricing" className="py-24 bg-[#e7e5e2] border-t border-black/10 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-bold uppercase tracking-wider text-[#19191a]">

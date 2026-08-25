@@ -103,10 +103,7 @@ export default function SignupPage() {
           Create your Company Workspace
         </h2>
         <p className="mt-1.5 text-center text-xs text-slate-500">
-          Already have an account?{" "}
-          <Link href="/login" className="font-semibold text-[#19191a] underline-offset-4 hover:underline">
-            Sign in here
-          </Link>
+          Get started with autonomous AI candidate qualification in minutes.
         </p>
       </div>
 
@@ -209,6 +206,13 @@ export default function SignupPage() {
                 )}
               </Button>
             </div>
+
+            <p className="text-center text-xs text-slate-500 pt-1">
+              Already have an account?{" "}
+              <Link href="/login" className="font-semibold text-[#19191a] underline-offset-4 hover:underline">
+                Sign in here
+              </Link>
+            </p>
           </form>
 
           {/* Divider */}

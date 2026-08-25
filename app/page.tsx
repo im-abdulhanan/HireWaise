@@ -80,24 +80,6 @@ export default function HomePage() {
                 </Button>
               </a>
             </div>
-
-            {/* Social Proof / Security Badges */}
-            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-300 font-medium">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-400" />
-                Zero-Hallucination Evidence
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
-                17-Column Google Sheets Sync
-              </span>
-              <span>•</span>
-              <span className="flex items-center gap-1.5">
-                <Lock className="h-4 w-4 text-emerald-400" />
-                Multi-Tenant Isolated
-              </span>
-            </div>
           </div>
         </section>
       </div>
@@ -147,16 +129,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Interactive Live Demo Visualizer */}
-      <section id="interactive-demo" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <InteractiveDemo />
+      {/* 4. Interactive Live Demo Visualizer / Evidence Engine */}
+      <section id="evidence-engine" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-20">
+        <div id="interactive-demo">
+          <InteractiveDemo />
+        </div>
       </section>
 
       {/* 5. End-to-End Workflow & 6-Stage Pipeline */}
       <WorkflowSection />
 
       {/* 6. Google Sheets 17-Column Live Sync Highlight */}
-      <section id="sheets-sync" className="py-24 bg-[#e7e5e2] border-t border-black/10">
+      <section id="sheets-sync" className="py-24 bg-[#e7e5e2] border-t border-black/10 scroll-mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 space-y-4">
