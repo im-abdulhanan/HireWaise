@@ -21,65 +21,86 @@ import { SecuritySection } from "@/components/marketing/SecuritySection";
 import { PricingSection } from "@/components/marketing/PricingSection";
 import { FAQSection } from "@/components/marketing/FAQSection";
 import { MarketingFooter } from "@/components/marketing/Footer";
+import LightBloom from "@/components/ui/LightBloom";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#e7e5e2] text-[#19191a] selection:bg-[#19191a] selection:text-white">
-      {/* 1. Header & Navigation */}
+      {/* 1. Global Fixed Navigation */}
       <MarketingNavbar />
 
-      {/* 2. Hero Section */}
-      <section className="relative overflow-hidden pt-20 pb-28 sm:pt-28 sm:pb-36 bg-[#e7e5e2]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-black/5 px-3.5 py-1 text-xs font-semibold text-[#19191a] shadow-xs mb-8">
-            <Sparkles className="h-3.5 w-3.5 text-[#19191a] animate-pulse" />
-            <span>Autonomous AI Screening & Deterministic Matching SaaS</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[#19191a] tracking-tight max-w-5xl mx-auto leading-[1.1]">
-            Screen Candidates Faster With{" "}
-            <span className="text-[#19191a]">AI-Powered</span> Resume Matching
-          </h1>
-
-          <p className="mt-6 max-w-3xl mx-auto text-base sm:text-lg text-slate-700 leading-relaxed font-normal">
-            Automatically compare candidate resumes against exact job requirements, surface verified evidence quotes, and help recruiters focus immediately on the candidates who deserve a closer look.
-          </p>
-
-          {/* CTAs */}
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/signup">
-              <Button size="lg" className="gap-2 bg-[#19191a] hover:bg-[#2b2b2d] text-white shadow-md px-8 py-3 text-sm font-bold">
-                <span>Start Screening Free</span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-
-            <a href="#interactive-demo">
-              <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-transparent border border-black/20 text-[#19191a] hover:bg-black hover:text-white">
-                Inspect AI Evidence Demo
-              </Button>
-            </a>
-          </div>
-
-          {/* Social Proof / Security Badges */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-600 font-medium">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="h-4 w-4 text-emerald-700" />
-              Zero-Hallucination Evidence
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5">
-              <FileSpreadsheet className="h-4 w-4 text-emerald-700" />
-              17-Column Google Sheets Sync
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-1.5">
-              <Lock className="h-4 w-4 text-emerald-700" />
-              Multi-Tenant Isolated
-            </span>
-          </div>
+      {/* 2. Hero Section with LightBloom WebGL Shader Background */}
+      <div className="relative overflow-hidden bg-black text-white">
+        {/* LightBloom Canvas behind Hero */}
+        <div className="absolute inset-0 z-0 pointer-events-auto">
+          <LightBloom
+            variant="shafts"
+            direction="bottom"
+            background="#000000"
+            baseColor="#6B2BF5"
+            accentColor="#EFE6FF"
+            speed={50}
+            hover={114}
+            style={{ width: "100%", height: "100%" }}
+          />
         </div>
-      </section>
+
+        {/* Hero Content */}
+        <section className="relative z-10 pt-28 pb-24 sm:pt-36 sm:pb-32">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-white/90 backdrop-blur-md shadow-xs mb-8">
+              <Sparkles className="h-3.5 w-3.5 text-purple-300 animate-pulse" />
+              <span>Autonomous AI Screening & Deterministic Matching SaaS</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white tracking-tight max-w-5xl mx-auto leading-[1.1]">
+              Screen Candidates Faster With{" "}
+              <span className="bg-gradient-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent">
+                AI-Powered
+              </span>{" "}
+              Resume Matching
+            </h1>
+
+            <p className="mt-6 max-w-3xl mx-auto text-base sm:text-lg text-slate-300 leading-relaxed font-normal">
+              Automatically compare candidate resumes against exact job requirements, surface verified evidence quotes, and help recruiters focus immediately on the candidates who deserve a closer look.
+            </p>
+
+            {/* CTAs */}
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/signup">
+                <Button size="lg" className="gap-2 bg-white text-black hover:bg-neutral-200 shadow-xl px-8 py-3 text-sm font-bold">
+                  <span>Start Screening Free</span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+
+              <a href="#interactive-demo">
+                <Button size="lg" variant="outline" className="text-sm font-semibold px-6 py-3 bg-white/10 border border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
+                  Inspect AI Evidence Demo
+                </Button>
+              </a>
+            </div>
+
+            {/* Social Proof / Security Badges */}
+            <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-300 font-medium">
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                Zero-Hallucination Evidence
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-400" />
+                17-Column Google Sheets Sync
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5">
+                <Lock className="h-4 w-4 text-emerald-400" />
+                Multi-Tenant Isolated
+              </span>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* 3. The Problem Section */}
       <section className="py-20 bg-[#e7e5e2] border-y border-black/10">

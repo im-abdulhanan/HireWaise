@@ -42,16 +42,16 @@ export function SecuritySection() {
   ];
 
   return (
-    <section id="security" className="py-24 bg-slate-900 text-white">
+    <section id="security" className="py-24 bg-black text-white border-y border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
+          <span className="text-xs font-bold uppercase tracking-wider text-purple-300">
             Enterprise Security & Trust
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mt-2">
             Built from the Ground Up for Enterprise Compliance
           </h2>
-          <p className="text-sm sm:text-base text-slate-400 mt-3">
+          <p className="text-sm sm:text-base text-neutral-400 mt-3">
             Your candidate data and organizational hiring policies are protected by bank-grade encryption and responsible AI guardrails.
           </p>
         </div>
@@ -62,15 +62,15 @@ export function SecuritySection() {
             return (
               <div
                 key={idx}
-                className="rounded-2xl border border-slate-800 bg-slate-950 p-6 hover:border-slate-700 transition-colors"
+                className="rounded-2xl border border-neutral-800 bg-neutral-950 p-6 hover:border-neutral-700 hover:bg-neutral-900/60 transition-all shadow-lg shadow-black/40"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20 mb-4">
-                  <Icon className="h-5 w-5" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20 mb-4 shadow-sm">
+                  <Icon className="h-5 w-5 text-purple-300" />
                 </div>
                 <h3 className="text-base font-bold text-white mb-2">
                   {feat.title}
                 </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
+                <p className="text-xs text-neutral-400 leading-relaxed">
                   {feat.desc}
                 </p>
               </div>

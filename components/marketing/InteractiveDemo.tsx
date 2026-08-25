@@ -125,17 +125,17 @@ export function InteractiveDemo() {
   const [selectedCandidate, setSelectedCandidate] = useState(DEMO_CANDIDATES[0]);
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-slate-900 text-white p-6 sm:p-10 shadow-2xl overflow-hidden">
+    <div className="rounded-3xl border border-neutral-800 bg-black text-white p-6 sm:p-10 shadow-2xl overflow-hidden">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-white" />
+            <Sparkles className="h-5 w-5 text-purple-300" />
             <h3 className="text-lg font-bold text-white tracking-tight">
               Live AI Evidence & Deterministic Matching Visualizer
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-neutral-400 mt-1">
             Click candidates below to inspect verified evidence quotes and explainable scoring math.
           </p>
         </div>
@@ -156,8 +156,8 @@ export function InteractiveDemo() {
               onClick={() => setSelectedCandidate(cand)}
               className={`rounded-2xl p-4 text-left transition-all border ${
                 isSelected
-                  ? "border-white bg-slate-800 shadow-lg"
-                  : "border-slate-800 bg-slate-900/60 hover:bg-slate-800/60"
+                  ? "border-purple-400/80 bg-neutral-900 shadow-lg shadow-purple-950/30"
+                  : "border-neutral-850 bg-neutral-950 hover:bg-neutral-900/70"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -174,15 +174,15 @@ export function InteractiveDemo() {
                   {cand.score}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-1">{cand.experience} • {cand.categoryLabel}</p>
+              <p className="text-xs text-neutral-400 mt-1">{cand.experience} • {cand.categoryLabel}</p>
             </button>
           );
         })}
       </div>
 
       {/* Selected Candidate Audit Card */}
-      <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950 p-6 sm:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="mt-8 rounded-2xl border border-neutral-800 bg-neutral-950 p-6 sm:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-neutral-800 pb-6">
           <div>
             <div className="flex items-center gap-3">
               <h4 className="text-xl font-bold text-white">{selectedCandidate.name}</h4>
@@ -198,20 +198,20 @@ export function InteractiveDemo() {
                 {selectedCandidate.categoryLabel}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-1">{selectedCandidate.summary}</p>
+            <p className="text-xs text-neutral-400 mt-1">{selectedCandidate.summary}</p>
           </div>
 
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-2xl font-extrabold text-white">{selectedCandidate.score}/100</p>
-              <p className="text-[10px] text-slate-400 uppercase tracking-wider">Weighted Score</p>
+              <p className="text-[10px] text-neutral-400 uppercase tracking-wider">Weighted Score</p>
             </div>
           </div>
         </div>
 
         {/* Evidence List */}
         <div className="mt-6 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
             Requirement Evidence Audit:
           </p>
 
@@ -219,7 +219,7 @@ export function InteractiveDemo() {
             {selectedCandidate.evidence.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs space-y-2"
+                className="rounded-xl border border-neutral-800/90 bg-neutral-900/60 p-4 text-xs space-y-2"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -233,20 +233,20 @@ export function InteractiveDemo() {
                     <span className="font-semibold text-white">{item.req}</span>
                   </div>
 
-                  <span className="text-[11px] font-mono text-slate-400">
+                  <span className="text-[11px] font-mono text-neutral-400">
                     {item.conf} confidence
                   </span>
                 </div>
 
                 {item.quote && (
-                  <div className="rounded-lg bg-slate-950 p-2.5 border border-slate-800/80 italic text-slate-300 font-serif">
-                    <Quote className="h-3 w-3 inline text-slate-400 mr-1 rotate-180" />
+                  <div className="rounded-lg bg-black p-2.5 border border-neutral-800 italic text-neutral-300 font-serif">
+                    <Quote className="h-3 w-3 inline text-neutral-500 mr-1 rotate-180" />
                     "{item.quote}"
                   </div>
                 )}
 
-                <p className="text-slate-400">
-                  <strong className="text-slate-300">Reasoning:</strong> {item.reasoning}
+                <p className="text-neutral-400">
+                  <strong className="text-neutral-300">Reasoning:</strong> {item.reasoning}
                 </p>
               </div>
             ))}
