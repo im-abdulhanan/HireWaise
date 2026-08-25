@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { JobDescriptionRenderer } from "@/components/jobs/JobDescriptionRenderer";
 
 const PIPELINE_STAGES = [
   {
@@ -655,10 +656,10 @@ export default function CandidateApplyPage() {
 
             {/* Full Job Description */}
             <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
-              <h2 className="text-base font-bold text-slate-900 mb-3">About the Role</h2>
-              <div className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap font-sans">
-                {job.description}
-              </div>
+              <h2 className="text-base font-bold text-slate-900 mb-6 pb-2 border-b border-slate-100">
+                About the Role
+              </h2>
+              <JobDescriptionRenderer description={job.description} />
             </div>
           </div>
 

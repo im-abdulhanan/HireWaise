@@ -14,12 +14,15 @@ import {
   Calendar,
   Clock,
   ArrowRight,
+  Eye,
+  Edit3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RequirementEditor, RequirementItem } from "./RequirementEditor";
 import { ScreeningPolicyEditor } from "./ScreeningPolicyEditor";
+import { JobDescriptionRenderer } from "./JobDescriptionRenderer";
 import { IScreeningPolicy, IScoringWeights } from "@/models/Job";
 
 interface JobFormProps {
@@ -99,6 +102,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
   const [isPlanLimitReached, setIsPlanLimitReached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
+  const [descriptionViewTab, setDescriptionViewTab] = useState<"edit" | "preview">("edit");
 
   // Generate Job Description from configured requirements with AI
   const handleGenerateWithAI = async () => {
@@ -137,6 +141,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
       }
 
       setDescription(json.data.description);
+      setDescriptionViewTab("preview");
     } catch (err: any) {
       setError(err.message || "Failed to generate job description. Please try again.");
     } finally {
@@ -447,12 +452,12 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
       </div>
 
       {/* Section 3: Job Description & AI Generator */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-1">
+      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-semibold text-slate-900">Job Description</h3>
             <p className="text-xs text-slate-500">
-              Generate a professional description automatically based on your Section 2 requirements, or write/paste your own.
+              Generate a recruiter-ready structured description automatically based on your Section 2 requirements, or write your own.
             </p>
           </div>
 
@@ -479,16 +484,55 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
           </div>
         </div>
 
-        <div className="mt-4">
-          <Textarea
-            rows={12}
-            placeholder="Click 'Generate Description with AI' to automatically write a professional job description from your configured requirements, or type/paste your custom description here..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            className="font-mono text-xs leading-relaxed"
-          />
+        {/* View Mode Segmented Control */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+            <button
+              type="button"
+              onClick={() => setDescriptionViewTab("preview")}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                descriptionViewTab === "preview"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              <span>Structured Preview</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDescriptionViewTab("edit")}
+              className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+                descriptionViewTab === "edit"
+                  ? "bg-white text-slate-900 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <Edit3 className="h-3.5 w-3.5" />
+              <span>Edit Text</span>
+            </button>
+          </div>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">
+            Zero Markdown syntax • Automatically formatted for applicants
+          </span>
         </div>
+
+        {descriptionViewTab === "edit" ? (
+          <div>
+            <Textarea
+              rows={12}
+              placeholder="Click 'Generate Description with AI' to automatically write a professional job description from your configured requirements, or type/paste your custom description here..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              className="font-mono text-xs leading-relaxed"
+            />
+          </div>
+        ) : (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-6">
+            <JobDescriptionRenderer description={description} />
+          </div>
+        )}
       </div>
 
       {/* Section 4: Policy & Scoring Weights */}

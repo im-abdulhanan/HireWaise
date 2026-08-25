@@ -32,19 +32,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { description, telemetry } = await generateJobDescriptionWithGemini({
-      jobTitle: finalTitle,
-      department,
-      location,
-      workplaceType,
-      employmentType,
-      requirements,
-    });
+    const { description, structuredDescription, telemetry } =
+      await generateJobDescriptionWithGemini({
+        jobTitle: finalTitle,
+        department,
+        location,
+        workplaceType,
+        employmentType,
+        requirements,
+      });
 
     return NextResponse.json({
       success: true,
       data: {
         description,
+        structuredDescription,
       },
       telemetry,
     });

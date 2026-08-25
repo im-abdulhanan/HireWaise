@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { JobDescriptionRenderer } from "@/components/jobs/JobDescriptionRenderer";
 
 export default function JobOverviewPage() {
   const params = useParams();
@@ -273,10 +274,10 @@ export default function JobOverviewPage() {
 
           {/* Job Description Text */}
           <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-xs">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">Job Description</h3>
-            <div className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap font-mono bg-slate-50 p-4 rounded-lg border border-slate-100 max-h-96 overflow-y-auto">
-              {job.description}
-            </div>
+            <h3 className="text-sm font-semibold text-slate-900 mb-4 pb-2 border-b border-slate-100">
+              About the Role
+            </h3>
+            <JobDescriptionRenderer description={job.description} />
           </div>
         </div>
 

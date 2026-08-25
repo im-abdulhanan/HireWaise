@@ -1,44 +1,73 @@
 import { generateStructuredJSON } from "./gemini";
 import { z } from "zod";
+import {
+  parseJobDescription,
+  StructuredJobDescription,
+  formatStructuredDescriptionAsText,
+} from "@/lib/jobs/description-parser";
 
-const JobDescriptionGenerationSchema = z.preprocess(
-  (val: any) => {
-    if (typeof val === "string") {
-      return { description: val };
-    }
-    if (val && typeof val === "object") {
-      return {
-        description:
-          val.description ||
-          val.jobDescription ||
-          val.job_description ||
-          val.content ||
-          val.text ||
-          "",
-      };
-    }
-    return val;
-  },
-  z.object({
-    description: z.string().min(20, "Generated description must be substantial"),
-  })
-);
+const JobDescriptionGenerationSchema = z.object({
+  overview: z.string().min(10, "Overview is required"),
+  responsibilities: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        description: z.string().min(1),
+      })
+    )
+    .min(1),
+  requiredQualifications: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        description: z.string().min(1),
+      })
+    )
+    .min(1),
+  preferredQualifications: z.array(z.string()).default([]),
+  benefits: z.array(z.string()).default([]),
+});
 
 const JOB_GENERATOR_SYSTEM_PROMPT = `
-You are an expert executive recruiter and talent acquisition copywriter.
-Your task is to generate a comprehensive, highly engaging, and professional Job Description based on the provided Job Title, Workplace Metadata, and Structured Job Requirements.
+You are an expert executive talent acquisition specialist and recruiter copywriter.
+Your task is to generate a clean, modern, recruiter-friendly job description as a structured JSON object.
 
-STRUCTURE OF THE GENERATED DESCRIPTION:
-1. Role Overview (Engaging paragraphs describing the position's mission, team impact, and day-to-day focus).
-2. Key Responsibilities (6-8 clear, actionable bullet points describing deliverables, architecture/strategy, and cross-functional collaboration).
-3. Required Qualifications (Directly incorporating all REQUIRED skills, experience years, education, and core competencies).
-4. Preferred / Bonus Qualifications (Incorporating all PREFERRED and OPTIONAL skills/certifications).
-5. Why Join Us / Benefits & Culture (Inspiring summary of growth opportunities, modern engineering/product culture, and perks).
+CRITICAL REQUIREMENTS:
+- Return ONLY a valid JSON object matching the requested schema.
+- NEVER use raw Markdown formatting anywhere in your text.
+- Do NOT include '###', '##', '#', or markdown heading markers.
+- Do NOT include '*' or '-' bullet characters in strings.
+- Do NOT include '**' bold or '_' italic characters.
+- Keep sentences concise, direct, and professional.
+- AI MUST NOT invent phantom requirements or hallucinate skills not mentioned in the configured list. Only elaborate on the provided job requirements and title.
+- Do NOT mention Gemini, AI, LLM, or prompt telemetry in the description.
 
-GUIDELINES:
-- Format the output with clear headers and bullet points.
-- Ensure every single configured requirement provided in the prompt is naturally integrated.
-- Tone should be modern, inclusive, and professional.
+SCHEMA STRUCTURE:
+{
+  "overview": "Short, compelling 2-3 sentence overview describing the role's mission and team impact.",
+  "responsibilities": [
+    {
+      "title": "Short Clean Responsibility Area",
+      "description": "1-2 punchy sentences explaining specific duties and deliverables."
+    }
+  ],
+  "requiredQualifications": [
+    {
+      "title": "Requirement or Skill Name (e.g. Node.js / Education / Years of Experience)",
+      "description": "Specific qualification requirements directly derived from the configured requirements."
+    }
+  ],
+  "preferredQualifications": [
+    "Clean string for preferred skill 1 without bullets or markdown",
+    "Clean string for preferred skill 2"
+  ],
+  "benefits": [
+    "Competitive compensation and performance bonuses",
+    "Comprehensive medical, dental, and vision health coverage",
+    "Flexible remote/hybrid work environment",
+    "Professional development stipend and learning budget"
+  ]
+}
 `.trim();
 
 export interface GenerateDescriptionParams {
@@ -59,6 +88,7 @@ export interface GenerateDescriptionParams {
 export async function generateJobDescriptionWithGemini(
   params: GenerateDescriptionParams
 ): Promise<{
+  structuredDescription: StructuredJobDescription;
   description: string;
   telemetry: any;
 }> {
@@ -83,7 +113,7 @@ export async function generateJobDescriptionWithGemini(
   );
 
   const userPrompt = `
-Generate a complete, professional Job Description for the following position:
+Generate a clean, professional, structured Job Description for:
 
 JOB TITLE: ${jobTitle}
 DEPARTMENT: ${department}
@@ -119,18 +149,23 @@ ${
     : "Bonus skills relevant to the role."
 }
 
-Return a valid JSON object containing the complete formatted job description string in the 'description' field.
+Generate the structured JSON response now. Remember: absolutely NO Markdown characters (no ###, no **, no * bullets).
 `.trim();
 
-  const result = await generateStructuredJSON<{ description: string }>({
+  const result = await generateStructuredJSON<StructuredJobDescription>({
     systemPrompt: JOB_GENERATOR_SYSTEM_PROMPT,
     userPrompt,
     schema: JobDescriptionGenerationSchema,
     temperature: 0.3,
   });
 
+  // Guarantee clean normalization
+  const normalized = parseJobDescription(result.data);
+  const formattedText = formatStructuredDescriptionAsText(normalized);
+
   return {
-    description: result.data.description,
+    structuredDescription: normalized,
+    description: formattedText,
     telemetry: result.telemetry,
   };
 }
