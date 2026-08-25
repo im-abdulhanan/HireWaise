@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, Briefcase, Filter } from "lucide-react";
+import { Plus, Search, Briefcase, Filter, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { JobCard, JobCardData } from "@/components/jobs/JobCard";
@@ -12,23 +12,41 @@ export default function JobsListPage() {
   const [jobs, setJobs] = useState<JobCardData[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PUBLISHED" | "DRAFT" | "ARCHIVED">("ALL");
+  const [billing, setBilling] = useState<{
+    plan: "FREE" | "PRO";
+    jobsUsed: number;
+    jobsLimit: number;
+    jobsRemaining: number;
+    canCreateJob: boolean;
+  } | null>(null);
 
   useEffect(() => {
-    async function fetchJobs() {
+    async function fetchData() {
       try {
-        const res = await fetch("/api/jobs");
-        const json = await res.json();
-        if (json.success) {
-          setJobs(json.data || []);
+        const [jobsRes, billingRes] = await Promise.all([
+          fetch("/api/jobs"),
+          fetch("/api/billing").catch(() => null),
+        ]);
+
+        const jobsJson = await jobsRes.json();
+        if (jobsJson.success) {
+          setJobs(jobsJson.data || []);
+        }
+
+        if (billingRes) {
+          const billingJson = await billingRes.json();
+          if (billingJson.success && billingJson.data?.usage) {
+            setBilling(billingJson.data.usage);
+          }
         }
       } catch (err) {
-        console.error("Failed to load jobs:", err);
+        console.error("Failed to load jobs data:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchJobs();
+    fetchData();
   }, []);
 
   // Restore scroll position when returning from Candidates or Details
@@ -36,7 +54,6 @@ export default function JobsListPage() {
     if (!loading && typeof window !== "undefined") {
       const savedScroll = sessionStorage.getItem("jobs_studio_scroll_y");
       if (savedScroll) {
-        // Use requestAnimationFrame and setTimeout to ensure DOM has painted job cards
         requestAnimationFrame(() => {
           setTimeout(() => {
             window.scrollTo({ top: Number(savedScroll), behavior: "instant" });
@@ -69,13 +86,53 @@ export default function JobsListPage() {
           </p>
         </div>
 
-        <Link href="/dashboard/jobs/new">
-          <Button className="gap-2 shadow-sm">
-            <Plus className="h-4 w-4" />
-            <span>Create New Job</span>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          {billing && (
+            <span className="hidden sm:inline-flex text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-2 rounded-xl">
+              {billing.jobsUsed} / {billing.jobsLimit} jobs used
+            </span>
+          )}
+
+          <Link href={billing && !billing.canCreateJob ? "/dashboard/billing" : "/dashboard/jobs/new"}>
+            <Button className="gap-2 shadow-sm">
+              {billing && !billing.canCreateJob ? (
+                <>
+                  <Sparkles className="h-4 w-4 text-purple-300" />
+                  <span>Upgrade to Post Job</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span>Create New Job</span>
+                </>
+              )}
+            </Button>
+          </Link>
+        </div>
       </div>
+
+      {/* Plan Limit Alert if Free Limit Reached */}
+      {billing && !billing.canCreateJob && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-purple-200 bg-purple-50/80 p-4 text-xs shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <Sparkles className="h-4 w-4 text-purple-600 shrink-0" />
+            <div>
+              <p className="font-bold text-purple-950">
+                You've reached your monthly limit of {billing.jobsLimit} jobs on the Free Plan.
+              </p>
+              <p className="text-purple-800 mt-0.5">
+                Upgrade to Pro ($10/mo) to post up to 50 jobs per month with priority screening.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/billing">
+            <Button size="sm" className="bg-[#19191a] hover:bg-black text-white text-xs font-bold gap-1 shrink-0">
+              <span>Upgrade to Pro</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xs">

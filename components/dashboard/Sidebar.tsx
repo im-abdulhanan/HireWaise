@@ -11,6 +11,7 @@ import {
   Settings,
   Sparkles,
   ShieldCheck,
+  CreditCard,
   X,
   ChevronLeft,
   ChevronRight,
@@ -38,6 +39,13 @@ export function Sidebar({
 
   // Internal collapse state with localStorage persistence if not controlled externally
   const [internalCollapsed, setInternalCollapsed] = useState<boolean>(false);
+  const [billing, setBilling] = useState<{
+    plan: "FREE" | "PRO";
+    jobsUsed: number;
+    jobsLimit: number;
+    jobsRemaining: number;
+    usagePercentage: number;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -51,6 +59,21 @@ export function Sidebar({
       // Ignore localStorage errors
     }
   }, []);
+
+  useEffect(() => {
+    async function loadBilling() {
+      try {
+        const res = await fetch("/api/billing");
+        const json = await res.json();
+        if (json.success && json.data?.usage) {
+          setBilling(json.data.usage);
+        }
+      } catch {
+        // Ignore fallback
+      }
+    }
+    loadBilling();
+  }, [pathname]);
 
   const isCollapsed =
     controlledIsCollapsed !== undefined ? controlledIsCollapsed : internalCollapsed;
@@ -74,6 +97,7 @@ export function Sidebar({
     { name: "Jobs Studio", href: "/dashboard/jobs", icon: Briefcase },
     { name: "Candidates", href: "/dashboard/candidates", icon: Users },
     { name: "Integrations & Sheets", href: "/dashboard/integrations", icon: FileSpreadsheet },
+    { name: "Billing & Usage", href: "/dashboard/billing", icon: CreditCard },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ];
 
@@ -206,8 +230,96 @@ export function Sidebar({
           </nav>
         </div>
 
-        {/* Responsible AI & Human Review Disclaimer in footer */}
-        <div className="p-3">
+        {/* Subscription Status Card (Bottom-Left) */}
+        <div className="p-3 space-y-2">
+          {isCollapsed ? (
+            <Link
+              href="/dashboard/billing"
+              onClick={onClose}
+              className={cn(
+                "flex h-10 w-10 mx-auto items-center justify-center rounded-xl border transition-colors shadow-2xs",
+                billing?.plan === "PRO"
+                  ? "bg-purple-100/80 border-purple-300 text-purple-800 hover:bg-purple-200"
+                  : "bg-white border-black/10 text-slate-700 hover:bg-slate-100"
+              )}
+              title={
+                billing?.plan === "PRO"
+                  ? `Pro Plan: ${billing.jobsUsed}/${billing.jobsLimit} jobs`
+                  : `Free Plan: ${billing?.jobsUsed ?? 0}/${billing?.jobsLimit ?? 2} jobs`
+              }
+            >
+              <CreditCard className="h-4 w-4" />
+            </Link>
+          ) : billing?.plan === "PRO" ? (
+            <div className="rounded-xl border border-purple-200/80 bg-purple-50/70 p-3 shadow-2xs space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-purple-100 text-purple-900 border border-purple-200">
+                  <Sparkles className="h-2.5 w-2.5 text-purple-600" />
+                  Pro Plan
+                </span>
+                <span className="text-[11px] font-bold text-purple-900">$10/mo</span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1.5 bg-purple-200/60 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-purple-600 transition-all duration-500"
+                  style={{ width: `${Math.min(100, billing.usagePercentage)}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-0.5">
+                <span className="text-purple-700 font-medium">
+                  {billing.jobsUsed} / {billing.jobsLimit} jobs
+                </span>
+                <Link
+                  href="/dashboard/billing"
+                  onClick={onClose}
+                  className="font-bold text-purple-900 hover:underline"
+                >
+                  Manage Plan
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-black/10 bg-white/90 p-3 shadow-2xs space-y-2 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
+                  Free Plan
+                </span>
+                <span className="text-[11px] font-semibold text-slate-700">
+                  {billing?.jobsUsed ?? 0} / {billing?.jobsLimit ?? 2} jobs
+                </span>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-500",
+                    (billing?.usagePercentage ?? 0) >= 100 ? "bg-rose-500" : "bg-[#19191a]"
+                  )}
+                  style={{ width: `${Math.min(100, billing?.usagePercentage ?? 0)}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-0.5">
+                <span className="text-slate-500 font-medium">
+                  {billing?.jobsRemaining ?? 2} remaining
+                </span>
+                <Link
+                  href="/dashboard/billing"
+                  onClick={onClose}
+                  className="font-bold text-[#19191a] hover:underline flex items-center gap-1 text-[11px]"
+                >
+                  <span>Upgrade</span>
+                  <Sparkles className="h-3 w-3 text-purple-600" />
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Responsible AI Disclaimer */}
           {isCollapsed ? (
             <div
               className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-[#e7e5e2]/80 border border-black/10 text-emerald-700"
@@ -216,7 +328,7 @@ export function Sidebar({
               <ShieldCheck className="h-5 w-5 text-emerald-600" />
             </div>
           ) : (
-            <div className="border border-black/10 p-3.5 bg-[#e7e5e2]/80 rounded-xl animate-in fade-in duration-200">
+            <div className="border border-black/10 p-3 bg-[#e7e5e2]/80 rounded-xl animate-in fade-in duration-200">
               <div className="flex items-start gap-2.5">
                 <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                 <div>

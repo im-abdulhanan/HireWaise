@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
-export type UserRole = "OWNER" | "RECRUITER" | "VIEWER";
+export type UserRole = "OWNER" | "ADMIN" | "RECRUITER" | "VIEWER";
 export type AuthProvider = "google" | "github" | "credentials";
 
 export interface IUser extends Document {
@@ -46,7 +46,7 @@ const UserSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ["OWNER", "RECRUITER", "VIEWER"],
+      enum: ["OWNER", "ADMIN", "RECRUITER", "VIEWER"],
       default: "OWNER",
     },
     lastLoginAt: { type: Date },

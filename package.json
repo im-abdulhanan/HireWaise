@@ -21,6 +21,8 @@
     "test:semantic": "tsx tests/semantic-skill-matcher.test.ts",
     "test:esco": "tsx tests/esco-normalization.test.ts",
     "test:fp": "tsx tests/false-positive-regression.test.ts",
+    "test:billing": "tsx tests/billing-system.test.ts",
+    "test:settings-flow": "tsx tests/settings-flow.test.ts",
     "esco:import": "tsx scripts/import-esco.ts"
   },
   "dependencies": {

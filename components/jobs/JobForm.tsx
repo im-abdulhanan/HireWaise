@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Sparkles,
   Save,
@@ -95,6 +96,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
   const [analyzingAi, setAnalyzingAi] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [isPlanLimitReached, setIsPlanLimitReached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aiSuccessMessage, setAiSuccessMessage] = useState<string | null>(null);
 
@@ -203,6 +205,7 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
     }
 
     setError(null);
+    setIsPlanLimitReached(false);
     setSaving(true);
 
     const payload = {
@@ -234,6 +237,9 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
+        if (json.code === "PLAN_LIMIT_REACHED" || res.status === 403) {
+          setIsPlanLimitReached(true);
+        }
         throw new Error(json.error || "Failed to save job.");
       }
 
@@ -248,8 +254,31 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+      {/* Plan Limit Alert Banner */}
+      {isPlanLimitReached && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border-2 border-purple-300 bg-purple-50 p-4 text-sm text-purple-950 shadow-xs animate-in fade-in duration-200">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-purple-200 text-purple-800">
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-bold text-purple-950">Monthly Job Limit Reached</p>
+              <p className="text-xs text-purple-800 mt-0.5">
+                You've reached your monthly job limit. Upgrade to Pro to create up to 50 jobs per month.
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/billing">
+            <Button size="sm" type="button" className="bg-[#19191a] text-white hover:bg-black text-xs font-bold gap-1 shrink-0">
+              <span>Upgrade to Pro ($10/mo)</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Alert Messages */}
-      {error && (
+      {error && !isPlanLimitReached && (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
           <p>{error}</p>

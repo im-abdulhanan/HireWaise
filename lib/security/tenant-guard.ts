@@ -8,6 +8,16 @@ export interface TenantContext {
   name: string;
   companyId: string;
   role: string;
+  provider?: string;
+  avatarUrl?: string;
+}
+
+export function isOwner(role: string): boolean {
+  return role === "OWNER";
+}
+
+export function isOwnerOrAdmin(role: string): boolean {
+  return role === "OWNER" || role === "ADMIN";
 }
 
 /**
@@ -27,6 +37,9 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     name?: string;
     companyId?: string;
     role?: string;
+    provider?: string;
+    avatarUrl?: string;
+    image?: string;
   };
 
   if (!user.companyId || !user.id) {
@@ -39,6 +52,8 @@ export async function getTenantContext(): Promise<TenantContext | null> {
     name: user.name || "",
     companyId: user.companyId,
     role: user.role || "RECRUITER",
+    provider: user.provider || "credentials",
+    avatarUrl: user.avatarUrl || user.image || "",
   };
 }
 
