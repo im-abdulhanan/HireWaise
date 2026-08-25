@@ -13,9 +13,11 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  Banknote,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatSalaryRange } from "@/lib/currency/currencies";
 
 export interface JobCardData {
   id: string;
@@ -25,6 +27,9 @@ export interface JobCardData {
   location?: string;
   workplaceType: string;
   employmentType: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
   status: string;
   totalApplications?: number;
   strongMatchesCount?: number;
@@ -120,6 +125,12 @@ export function JobCard({
                 <MapPin className="h-3.5 w-3.5 text-slate-400" />
                 {job.location || "Remote"} ({job.workplaceType?.toLowerCase()})
               </span>
+              {formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
+                <span className="flex items-center gap-1 font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
+                  <Banknote className="h-3 w-3 text-emerald-600" />
+                  <span>{formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
+                </span>
+              )}
             </div>
           </div>
 

@@ -21,13 +21,14 @@ import {
   FileQuestion,
   Calendar,
   Check,
-  Copy,
   FileCheck,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { JobDescriptionRenderer } from "@/components/jobs/JobDescriptionRenderer";
+import { formatSalaryRange } from "@/lib/currency/currencies";
 
 const PIPELINE_STAGES = [
   {
@@ -593,12 +594,10 @@ export default function CandidateApplyPage() {
                   <MapPin className="h-4 w-4 text-slate-400" />
                   {job.location || "Remote"}
                 </span>
-                {(job.salaryMin || job.salaryMax) && (
-                  <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                    <DollarSign className="h-4 w-4 text-slate-400" />
-                    {job.salaryMin ? `$${job.salaryMin.toLocaleString()}` : ""}
-                    {job.salaryMin && job.salaryMax ? " - " : ""}
-                    {job.salaryMax ? `$${job.salaryMax.toLocaleString()}` : ""} {job.salaryCurrency}
+                {formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
+                  <span className="flex items-center gap-1.5 font-semibold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <Banknote className="h-4 w-4 text-emerald-600" />
+                    <span>{formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
                   </span>
                 )}
                 {formattedDeadline && (

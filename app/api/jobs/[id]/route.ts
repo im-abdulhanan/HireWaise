@@ -104,10 +104,37 @@ export async function PATCH(
     if (department !== undefined) job.department = department?.trim();
     if (location !== undefined) job.location = location?.trim();
     if (workplaceType !== undefined) job.workplaceType = workplaceType;
-    if (employmentType !== undefined) job.employmentType = employmentType;
-    if (salaryMin !== undefined) job.salaryMin = salaryMin ? Number(salaryMin) : undefined;
-    if (salaryMax !== undefined) job.salaryMax = salaryMax ? Number(salaryMax) : undefined;
-    if (salaryCurrency !== undefined) job.salaryCurrency = salaryCurrency;
+    if (salaryMin !== undefined) {
+      job.salaryMin = salaryMin !== null && salaryMin !== "" ? Number(salaryMin) : undefined;
+    }
+    if (salaryMax !== undefined) {
+      job.salaryMax = salaryMax !== null && salaryMax !== "" ? Number(salaryMax) : undefined;
+    }
+    if (job.salaryMin !== undefined && job.salaryMin < 0) {
+      return NextResponse.json(
+        { error: "Minimum salary must be a positive number.", success: false },
+        { status: 400 }
+      );
+    }
+    if (job.salaryMax !== undefined && job.salaryMax < 0) {
+      return NextResponse.json(
+        { error: "Maximum salary must be a positive number.", success: false },
+        { status: 400 }
+      );
+    }
+    if (
+      job.salaryMin !== undefined &&
+      job.salaryMax !== undefined &&
+      job.salaryMin > job.salaryMax
+    ) {
+      return NextResponse.json(
+        { error: "Minimum salary cannot exceed maximum salary.", success: false },
+        { status: 400 }
+      );
+    }
+    if (salaryCurrency !== undefined) {
+      job.salaryCurrency = (salaryCurrency || "USD").toString().trim().toUpperCase();
+    }
     if (description !== undefined) job.description = description;
     if (status !== undefined) job.status = status;
     if (applicationDeadline !== undefined) {

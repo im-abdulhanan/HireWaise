@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { RequirementEditor, RequirementItem } from "./RequirementEditor";
 import { ScreeningPolicyEditor } from "./ScreeningPolicyEditor";
 import { JobDescriptionRenderer } from "./JobDescriptionRenderer";
+import { CurrencySelector } from "./CurrencySelector";
+import { getCurrency, formatSalaryRange } from "@/lib/currency/currencies";
 import { IScreeningPolicy, IScoringWeights } from "@/models/Job";
 
 interface JobFormProps {
@@ -208,6 +210,18 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
       setError("Job description is required.");
       return;
     }
+    if (salaryMin && Number(salaryMin) < 0) {
+      setError("Minimum salary amount must be a positive number.");
+      return;
+    }
+    if (salaryMax && Number(salaryMax) < 0) {
+      setError("Maximum salary amount must be a positive number.");
+      return;
+    }
+    if (salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax)) {
+      setError("Minimum salary cannot be greater than maximum salary.");
+      return;
+    }
 
     setError(null);
     setIsPlanLimitReached(false);
@@ -378,33 +392,64 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Salary Range (Optional)
-            </label>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  type="number"
-                  placeholder="Min"
-                  value={salaryMin}
-                  onChange={(e) => setSalaryMin(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <span className="text-xs text-slate-400">to</span>
-              <div className="relative flex-1">
-                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-                <Input
-                  type="number"
-                  placeholder="Max"
-                  value={salaryMax}
-                  onChange={(e) => setSalaryMax(e.target.value)}
-                  className="pl-8"
-                />
+          <div className="sm:col-span-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700">
+                Salary Range (Optional)
+              </label>
+              {salaryMin && salaryMax && Number(salaryMin) > Number(salaryMax) && (
+                <span className="text-[11px] font-semibold text-rose-600">
+                  Minimum salary cannot exceed maximum salary
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <CurrencySelector
+                value={salaryCurrency}
+                onChange={setSalaryCurrency}
+              />
+              <div className="flex flex-1 items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400 font-mono">
+                    {getCurrency(salaryCurrency).symbol}
+                  </span>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Min amount"
+                    value={salaryMin}
+                    onChange={(e) => setSalaryMin(e.target.value)}
+                    className="pl-8 text-xs font-medium"
+                  />
+                </div>
+                <span className="text-xs text-slate-400 font-medium px-1">to</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400 font-mono">
+                    {getCurrency(salaryCurrency).symbol}
+                  </span>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="Max amount"
+                    value={salaryMax}
+                    onChange={(e) => setSalaryMax(e.target.value)}
+                    className="pl-8 text-xs font-medium"
+                  />
+                </div>
               </div>
             </div>
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              {salaryMin || salaryMax ? (
+                <>
+                  Candidate preview:{" "}
+                  <strong className="text-slate-700">
+                    {formatSalaryRange(Number(salaryMin) || null, Number(salaryMax) || null, salaryCurrency)}
+                  </strong>
+                </>
+              ) : (
+                "Leave blank if salary is undisclosed or negotiated during interview."
+              )}
+            </p>
           </div>
 
           <div>

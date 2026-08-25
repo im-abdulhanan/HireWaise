@@ -18,10 +18,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Trash2,
+  Banknote,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { formatSalaryRange } from "@/lib/currency/currencies";
 import { JobDescriptionRenderer } from "@/components/jobs/JobDescriptionRenderer";
 
 export default function JobOverviewPage() {
@@ -145,6 +147,17 @@ export default function JobOverviewPage() {
               {job.department && <span>{job.department}</span>}
               <span>•</span>
               <span>{job.location || "Remote"} ({job.workplaceType?.toLowerCase()})</span>
+              <span>•</span>
+              <span>{job.employmentType?.replace("_", " ").toLowerCase()}</span>
+              {formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency) && (
+                <>
+                  <span>•</span>
+                  <span className="font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px] flex items-center gap-1">
+                    <Banknote className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>{formatSalaryRange(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
+                  </span>
+                </>
+              )}
               <span>•</span>
               <span>Created {formatDate(job.createdAt)}</span>
             </div>

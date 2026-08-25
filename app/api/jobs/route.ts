@@ -94,6 +94,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const minNum = salaryMin !== undefined && salaryMin !== null && salaryMin !== "" ? Number(salaryMin) : undefined;
+    const maxNum = salaryMax !== undefined && salaryMax !== null && salaryMax !== "" ? Number(salaryMax) : undefined;
+
+    if (minNum !== undefined && minNum < 0) {
+      return NextResponse.json(
+        { error: "Minimum salary must be a positive number." },
+        { status: 400 }
+      );
+    }
+    if (maxNum !== undefined && maxNum < 0) {
+      return NextResponse.json(
+        { error: "Maximum salary must be a positive number." },
+        { status: 400 }
+      );
+    }
+    if (minNum !== undefined && maxNum !== undefined && minNum > maxNum) {
+      return NextResponse.json(
+        { error: "Minimum salary cannot exceed maximum salary." },
+        { status: 400 }
+      );
+    }
+
+    const cleanCurrency = (salaryCurrency || "USD").toString().trim().toUpperCase();
+
     await connectToDatabase();
 
     // Server-side subscription & monthly job limit enforcement
@@ -134,9 +158,9 @@ export async function POST(req: NextRequest) {
       location: location?.trim(),
       workplaceType,
       employmentType,
-      salaryMin: salaryMin ? Number(salaryMin) : undefined,
-      salaryMax: salaryMax ? Number(salaryMax) : undefined,
-      salaryCurrency,
+      salaryMin: minNum,
+      salaryMax: maxNum,
+      salaryCurrency: cleanCurrency,
       description,
       status,
       applicationDeadline: applicationDeadline ? new Date(applicationDeadline) : undefined,
