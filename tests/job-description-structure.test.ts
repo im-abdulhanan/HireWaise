@@ -25,8 +25,8 @@ async function runJobDescriptionTests() {
 
   // --- TEST SUITE 1: Markdown Stripping Utility ---
   console.log("🧹 Test Suite 1: Markdown Syntax Stripping");
-  const rawHeaders = "### Role Overview\n## Key Duties\n# Summary";
-  assert(!stripMarkdown(rawHeaders).includes("#"), "Headers (#, ##, ###) stripped cleanly");
+  const rawHeaders = "### Role Overview\n## Key Duties\n# Summary\n#### Subheading";
+  assert(!stripMarkdown(rawHeaders).includes("#"), "Headers (#, ##, ###, ####) stripped cleanly");
 
   const rawBold = "**Backend Architecture**: **Design** and develop **scalable** APIs.";
   const cleanBold = stripMarkdown(rawBold);
@@ -35,11 +35,14 @@ async function runJobDescriptionTests() {
     "Bold asterisks (**) stripped cleanly"
   );
 
-  const rawBullets = "* First bullet\n- Second bullet\n+ Third bullet";
+  const rawBullets = "* First bullet\n- Second bullet\n+ Third bullet\n• Fourth bullet";
   const cleanBullets = stripMarkdown(rawBullets);
   assert(
-    !cleanBullets.startsWith("*") && !cleanBullets.startsWith("-") && !cleanBullets.startsWith("+"),
-    "Markdown bullet markers (*, -, +) stripped cleanly"
+    !cleanBullets.startsWith("*") &&
+      !cleanBullets.startsWith("-") &&
+      !cleanBullets.startsWith("+") &&
+      !cleanBullets.startsWith("•"),
+    "Markdown bullet markers (*, -, +, •) stripped cleanly"
   );
 
   // --- TEST SUITE 2: Structured JSON Object Parsing ---
@@ -58,10 +61,12 @@ async function runJobDescriptionTests() {
     ],
     requiredQualifications: [
       {
+        label: "Node.js",
         title: "Node.js",
         description: "5+ years of backend development experience.",
       },
       {
+        label: "Education",
         title: "Education",
         description: "Bachelor's degree in Computer Science or related field.",
       },
@@ -78,6 +83,7 @@ async function runJobDescriptionTests() {
     "Responsibility title matches exactly"
   );
   assert(parsedFromObj.requiredQualifications.length === 2, "Required qualifications length = 2");
+  assert(parsedFromObj.requiredQualifications[0].label === "Node.js", "Required qualification label = 'Node.js'");
   assert(parsedFromObj.preferredQualifications.length === 2, "Preferred qualifications length = 2");
   assert(parsedFromObj.benefits.length === 2, "Benefits array length = 2");
 
@@ -91,8 +97,75 @@ async function runJobDescriptionTests() {
   const parsedFromFenced = parseJobDescription(fencedJson);
   assert(parsedFromFenced.responsibilities.length === 2, "Fenced JSON parsed correctly");
 
-  // --- TEST SUITE 4: Legacy Raw Markdown Parsing & Migration ---
-  console.log("\n🔄 Test Suite 4: Legacy Markdown String Normalization");
+  // --- TEST SUITE 4: UI/UX Designer Clean Two-Level Format Parsing ---
+  console.log("\n🎨 Test Suite 4: Clean Two-Level Label & Description Hierarchy Parsing");
+  const cleanTwoLevelText = `
+Role Overview
+Join the NIC team in Peshawar as a UI/UX Designer to craft intuitive, user-centric digital experiences. In this full-time, on-site role, you will collaborate with cross-functional teams to translate complex requirements into beautiful, functional designs.
+
+Key Responsibilities
+User Interface Design
+Create visually stunning and highly functional user interfaces using industry-standard design tools.
+
+User Experience Optimization
+Map user journeys, build wireframes, and design interactive prototypes to ensure seamless navigation.
+
+Collaboration and Handoff
+Work closely with product managers and developers to ensure design integrity during implementation.
+
+Required Qualifications
+Figma
+Advanced proficiency in Figma for creating high-fidelity designs, components, and interactive prototypes.
+
+Adobe Photoshop
+Strong hands-on experience with Adobe Photoshop for visual asset creation and image editing.
+
+Adobe Illustrator
+Proficiency in Adobe Illustrator for vector graphic creation, iconography, and branding assets.
+
+Experience
+At least 2 years of professional experience working as a UI/UX Designer.
+
+Education
+Must be a graduate with a relevant degree in Design, Computer Science, or a related field.
+`.trim();
+
+  const parsedClean = parseJobDescription(cleanTwoLevelText);
+
+  assert(
+    parsedClean.overview.includes("Join the NIC team in Peshawar"),
+    "Overview cleanly extracted without section heading"
+  );
+  assert(parsedClean.responsibilities.length === 3, "Responsibilities extracted as 3 items");
+  assert(
+    parsedClean.responsibilities[0].title === "User Interface Design",
+    "Responsibility 1 label = 'User Interface Design'"
+  );
+  assert(
+    parsedClean.responsibilities[0].description.startsWith("Create visually stunning"),
+    "Responsibility 1 description is normal-weight text"
+  );
+
+  assert(parsedClean.requiredQualifications.length === 5, "Required qualifications extracted as 5 items");
+  assert(parsedClean.requiredQualifications[0].label === "Figma", "Required qualification 1 label = 'Figma'");
+  assert(
+    parsedClean.requiredQualifications[0].description.includes("Advanced proficiency in Figma"),
+    "Required qualification 1 description is clean text"
+  );
+  assert(parsedClean.requiredQualifications[3].label === "Experience", "Required qualification 4 label = 'Experience'");
+  assert(
+    parsedClean.requiredQualifications[3].description ===
+      "At least 2 years of professional experience working as a UI/UX Designer.",
+    "Required qualification 4 description matches exact text"
+  );
+  assert(parsedClean.requiredQualifications[4].label === "Education", "Required qualification 5 label = 'Education'");
+  assert(
+    parsedClean.requiredQualifications[4].description.includes("graduate with a relevant degree"),
+    "Required qualification 5 description matches exact degree text"
+  );
+
+  // --- TEST SUITE 5: Legacy Raw Markdown Parsing & Migration ---
+  console.log("\n🔄 Test Suite 5: Legacy Markdown String Normalization");
   const legacyMarkdown = `
 ### Role Overview
 CoderKod is seeking a highly skilled Backend MERN Developer to architect high-performance distributed systems.
@@ -103,7 +176,7 @@ CoderKod is seeking a highly skilled Backend MERN Developer to architect high-pe
 
 ### Required Qualifications
 * Education: Bachelor's degree in Computer Science, Software Engineering, or a related field.
-* Node.js: 5+ years of professional experience building backend systems.
+* Years of Experience: 5+ years of professional experience building backend systems.
 
 ### Preferred Qualifications
 * Familiarity with TypeScript
@@ -142,8 +215,8 @@ CoderKod is seeking a highly skilled Backend MERN Developer to architect high-pe
     "Legacy Required Qualifications extracted as 2 structured items"
   );
   assert(
-    parsedLegacy.requiredQualifications[1].title === "Node.js",
-    "Legacy Required Qualification 2 title = 'Node.js'"
+    parsedLegacy.requiredQualifications[1].label === "Experience",
+    "Legacy 'Years of Experience' normalized cleanly to 'Experience'"
   );
   assert(
     !parsedLegacy.requiredQualifications[1].description.includes("*") &&
@@ -165,13 +238,14 @@ CoderKod is seeking a highly skilled Backend MERN Developer to architect high-pe
     "Legacy Benefits extracted as 2 items"
   );
 
-  // --- TEST SUITE 5: Recruiter Plain Text Formatter ---
-  console.log("\n📝 Test Suite 5: Text Formatting without Markdown Symbols");
-  const formattedText = formatStructuredDescriptionAsText(parsedLegacy);
+  // --- TEST SUITE 6: Recruiter Plain Text Formatter ---
+  console.log("\n📝 Test Suite 6: Text Formatting without Markdown Symbols");
+  const formattedText = formatStructuredDescriptionAsText(parsedClean);
   assert(!formattedText.includes("###"), "Formatted text has NO '###' symbols");
   assert(!formattedText.includes("**"), "Formatted text has NO '**' bold syntax");
-  assert(formattedText.includes("ROLE OVERVIEW"), "Formatted text contains clean uppercase section headings");
-  assert(formattedText.includes("KEY RESPONSIBILITIES"), "Formatted text contains KEY RESPONSIBILITIES");
+  assert(formattedText.includes("Role Overview"), "Formatted text contains clean section headings");
+  assert(formattedText.includes("Key Responsibilities"), "Formatted text contains Key Responsibilities");
+  assert(formattedText.includes("Required Qualifications"), "Formatted text contains Required Qualifications");
 
   console.log("\n==================================================");
   console.log(`📊 TEST RESULTS: ${testPassed} Passed, ${testFailed} Failed`);

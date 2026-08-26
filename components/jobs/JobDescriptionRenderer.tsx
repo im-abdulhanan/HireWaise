@@ -6,7 +6,6 @@ import {
   StructuredJobDescription,
 } from "@/lib/jobs/description-parser";
 import { cn } from "@/lib/utils";
-import { Briefcase, CheckCircle2, Award, Sparkles, Gift } from "lucide-react";
 
 interface JobDescriptionRendererProps {
   description: string | StructuredJobDescription | null | undefined;
@@ -43,11 +42,10 @@ export function JobDescriptionRenderer({
       {/* 1. Role Overview */}
       {structured.overview && (
         <section className="space-y-2.5">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Briefcase className="h-3.5 w-3.5 text-slate-500" />
-            <span>Role Overview</span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            Role Overview
           </h3>
-          <p className="text-xs sm:text-sm text-slate-700 leading-relaxed whitespace-pre-wrap">
+          <p className="text-sm text-slate-600 font-normal leading-relaxed whitespace-pre-wrap">
             {structured.overview}
           </p>
         </section>
@@ -55,19 +53,18 @@ export function JobDescriptionRenderer({
 
       {/* 2. Key Responsibilities */}
       {structured.responsibilities.length > 0 && (
-        <section className="space-y-3.5 pt-2 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 text-slate-500" />
-            <span>Key Responsibilities</span>
+        <section className="space-y-4 pt-2 border-t border-slate-100">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            Key Responsibilities
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {structured.responsibilities.map((resp, idx) => (
               <div key={idx} className="space-y-0.5">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                <strong className="block text-sm font-bold text-slate-900">
                   {resp.title}
-                </h4>
+                </strong>
                 {resp.description && (
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-sm text-slate-600 font-normal leading-relaxed">
                     {resp.description}
                   </p>
                 )}
@@ -79,19 +76,18 @@ export function JobDescriptionRenderer({
 
       {/* 3. Required Qualifications */}
       {structured.requiredQualifications.length > 0 && (
-        <section className="space-y-3.5 pt-2 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Award className="h-3.5 w-3.5 text-slate-500" />
-            <span>Required Qualifications</span>
+        <section className="space-y-4 pt-2 border-t border-slate-100">
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            Required Qualifications
           </h3>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {structured.requiredQualifications.map((req, idx) => (
               <div key={idx} className="space-y-0.5">
-                <h4 className="text-xs sm:text-sm font-bold text-slate-900">
-                  {req.title}
-                </h4>
+                <strong className="block text-sm font-bold text-slate-900">
+                  {req.label || req.title}
+                </strong>
                 {req.description && (
-                  <p className="text-xs text-slate-600 leading-relaxed">
+                  <p className="text-sm text-slate-600 font-normal leading-relaxed">
                     {req.description}
                   </p>
                 )}
@@ -104,16 +100,12 @@ export function JobDescriptionRenderer({
       {/* 4. Preferred Qualifications */}
       {structured.preferredQualifications.length > 0 && (
         <section className="space-y-3 pt-2 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Sparkles className="h-3.5 w-3.5 text-purple-500" />
-            <span>Preferred Qualifications</span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            Preferred Qualifications
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-1.5 list-disc pl-5 text-sm text-slate-600 font-normal leading-relaxed">
             {structured.preferredQualifications.map((pref, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-relaxed">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-400 mt-1.5 shrink-0" />
-                <span>{pref}</span>
-              </li>
+              <li key={idx}>{pref}</li>
             ))}
           </ul>
         </section>
@@ -122,16 +114,12 @@ export function JobDescriptionRenderer({
       {/* 5. Benefits & Perks */}
       {structured.benefits.length > 0 && (
         <section className="space-y-3 pt-2 border-t border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <Gift className="h-3.5 w-3.5 text-emerald-500" />
-            <span>Benefits & Perks</span>
+          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+            Benefits & Perks
           </h3>
-          <ul className="space-y-2">
+          <ul className="space-y-1.5 list-disc pl-5 text-sm text-slate-600 font-normal leading-relaxed">
             {structured.benefits.map((benefit, idx) => (
-              <li key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 leading-relaxed">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                <span>{benefit}</span>
-              </li>
+              <li key={idx}>{benefit}</li>
             ))}
           </ul>
         </section>
@@ -139,4 +127,5 @@ export function JobDescriptionRenderer({
     </div>
   );
 }
+
 export default JobDescriptionRenderer;

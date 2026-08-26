@@ -11,16 +11,16 @@ const JobDescriptionGenerationSchema = z.object({
   responsibilities: z
     .array(
       z.object({
-        title: z.string().min(1),
-        description: z.string().min(1),
+        title: z.string().min(1, "Responsibility title is required"),
+        description: z.string().min(1, "Responsibility description is required"),
       })
     )
     .min(1),
   requiredQualifications: z
     .array(
       z.object({
-        title: z.string().min(1),
-        description: z.string().min(1),
+        label: z.string().min(1, "Requirement label is required"),
+        description: z.string().min(1, "Requirement description is required"),
       })
     )
     .min(1),
@@ -29,43 +29,61 @@ const JobDescriptionGenerationSchema = z.object({
 });
 
 const JOB_GENERATOR_SYSTEM_PROMPT = `
-You are an expert executive talent acquisition specialist and recruiter copywriter.
+You are an expert executive talent acquisition specialist and recruiter copywriter for HireWise SaaS.
 Your task is to generate a clean, modern, recruiter-friendly job description as a structured JSON object.
 
-CRITICAL REQUIREMENTS:
-- Return ONLY a valid JSON object matching the requested schema.
-- NEVER use raw Markdown formatting anywhere in your text.
-- Do NOT include '###', '##', '#', or markdown heading markers.
-- Do NOT include '*' or '-' bullet characters in strings.
-- Do NOT include '**' bold or '_' italic characters.
-- Keep sentences concise, direct, and professional.
-- AI MUST NOT invent phantom requirements or hallucinate skills not mentioned in the configured list. Only elaborate on the provided job requirements and title.
-- Do NOT mention Gemini, AI, LLM, or prompt telemetry in the description.
+CRITICAL FORMATTING & HIERARCHY RULES:
+1. Two-Level Item Structure (Label + Description):
+   - For required qualifications, 'label' MUST be a concise bold title (e.g. "Experience", "Education", "Figma", "Adobe Photoshop", "React", "Node.js").
+   - For responsibilities, 'title' MUST be a concise bold area (e.g. "User Interface Design", "User Experience Optimization", "Collaboration and Handoff").
+   - 'description' MUST be 1-2 punchy, professional sentences of normal-weight text explaining the role requirement or deliverable.
+   - NEVER make the description itself bold, and never combine the label and description into a single giant header.
+   - For years of experience, use label "Experience" (e.g. description: "At least 2 years of professional experience working as a UI/UX Designer.").
+   - For degrees, use label "Education" (e.g. description: "Must be a graduate with a relevant degree in Design, Computer Science, or a related field.").
+
+2. ABSOLUTELY ZERO RAW MARKDOWN:
+   - Return ONLY a valid JSON object matching the requested schema.
+   - Do NOT include '###', '##', '#', or '####' markdown heading markers.
+   - Do NOT include '*' or '-' bullet characters in strings.
+   - Do NOT include '**' bold or '_' italic characters.
+
+3. ACCURACY & EVIDENCE:
+   - AI MUST NOT invent phantom requirements or hallucinate skills not mentioned in the configured list.
+   - Only elaborate on the provided job requirements and title.
+   - Do NOT mention Gemini, AI, LLM, or prompt telemetry in the output.
 
 SCHEMA STRUCTURE:
 {
-  "overview": "Short, compelling 2-3 sentence overview describing the role's mission and team impact.",
+  "overview": "Short compelling 2-3 sentence overview describing the role's mission, team, and impact.",
   "responsibilities": [
     {
-      "title": "Short Clean Responsibility Area",
-      "description": "1-2 punchy sentences explaining specific duties and deliverables."
+      "title": "User Interface Design",
+      "description": "Create visually stunning and highly functional user interfaces using industry-standard design tools."
     }
   ],
   "requiredQualifications": [
     {
-      "title": "Requirement or Skill Name (e.g. Node.js / Education / Years of Experience)",
-      "description": "Specific qualification requirements directly derived from the configured requirements."
+      "label": "Figma",
+      "description": "Advanced proficiency in Figma for creating high-fidelity designs, components, and interactive prototypes."
+    },
+    {
+      "label": "Experience",
+      "description": "At least 2 years of professional experience working as a UI/UX Designer."
+    },
+    {
+      "label": "Education",
+      "description": "Must be a graduate with a relevant degree in Design, Computer Science, or a related field."
     }
   ],
   "preferredQualifications": [
-    "Clean string for preferred skill 1 without bullets or markdown",
-    "Clean string for preferred skill 2"
+    "Experience with design systems and accessibility (WCAG) guidelines",
+    "Familiarity with front-end handoff and basic HTML/CSS principles"
   ],
   "benefits": [
-    "Competitive compensation and performance bonuses",
-    "Comprehensive medical, dental, and vision health coverage",
-    "Flexible remote/hybrid work environment",
-    "Professional development stipend and learning budget"
+    "Competitive salary and performance bonuses",
+    "Comprehensive medical, dental, and health coverage",
+    "Flexible remote or hybrid work schedule",
+    "Annual learning budget and professional development stipend"
   ]
 }
 `.trim();
@@ -149,7 +167,10 @@ ${
     : "Bonus skills relevant to the role."
 }
 
-Generate the structured JSON response now. Remember: absolutely NO Markdown characters (no ###, no **, no * bullets).
+Generate the structured JSON response now. Remember:
+- Label/Title = bold category/skill name ONLY (e.g. "Experience", "Education", "Figma")
+- Description = normal-weight explanation sentences
+- Absolutely NO raw Markdown (#, ##, ###, ####, **, * bullets).
 `.trim();
 
   const result = await generateStructuredJSON<StructuredJobDescription>({
