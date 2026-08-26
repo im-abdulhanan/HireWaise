@@ -263,6 +263,16 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const errorParam = searchParams.get("error");
+    if (success === "connected" || success === "google_connected") {
+      showToast("Google Sheets Connected successfully!");
+    } else if (errorParam) {
+      showToast(decodeURIComponent(errorParam), "error");
+    }
+  }, [searchParams]);
+
   function setTab(tabName: string) {
     router.push(`/dashboard/settings?tab=${tabName}`);
   }

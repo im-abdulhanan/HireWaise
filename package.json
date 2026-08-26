@@ -25,6 +25,7 @@
     "test:settings-flow": "tsx tests/settings-flow.test.ts",
     "test:job-description": "tsx tests/job-description-structure.test.ts",
     "test:currency-salary": "tsx tests/currency-salary.test.ts",
+    "test:google-oauth": "tsx tests/google-sheets-oauth.test.ts",
     "esco:import": "tsx scripts/import-esco.ts"
   },
   "dependencies": {

@@ -8,6 +8,7 @@ export interface IGoogleIntegration extends Document {
   encryptedRefreshToken: string;
   tokenExpiry?: Date;
   connectedEmail?: string;
+  scopes?: string[];
   connectedSpreadsheetId?: string;
   spreadsheetTitle?: string;
   spreadsheetUrl?: string;
@@ -32,6 +33,7 @@ const GoogleIntegrationSchema = new Schema<IGoogleIntegration>(
     encryptedRefreshToken: { type: String, required: true },
     tokenExpiry: { type: Date },
     connectedEmail: { type: String },
+    scopes: [{ type: String }],
     connectedSpreadsheetId: { type: String },
     spreadsheetTitle: { type: String },
     spreadsheetUrl: { type: String },

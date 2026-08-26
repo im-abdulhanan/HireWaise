@@ -54,8 +54,8 @@ export default function GoogleSheetsIntegrationPage() {
   useEffect(() => {
     fetchStatus();
 
-    if (successParam === "connected") {
-      setMessage("Google account successfully connected with OAuth 2.0!");
+    if (successParam === "connected" || successParam === "google_connected") {
+      setMessage("Google Sheets Connected successfully with OAuth 2.0!");
     }
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
