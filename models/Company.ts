@@ -8,6 +8,7 @@ export interface ISubscriptionData {
   status: SubscriptionStatus;
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
+  jobsUsedThisPeriod?: number;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   stripePriceId?: string;
@@ -123,6 +124,7 @@ const CompanySchema = new Schema<ICompany>(
       },
       currentPeriodStart: { type: Date, default: Date.now },
       currentPeriodEnd: { type: Date },
+      jobsUsedThisPeriod: { type: Number, default: 0 },
       stripeCustomerId: { type: String },
       stripeSubscriptionId: { type: String },
       stripePriceId: { type: String },

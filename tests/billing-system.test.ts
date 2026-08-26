@@ -33,13 +33,15 @@ import {
   getCompanySubscription,
   getCompanyJobUsage,
   assertCanCreateJob,
+  consumeJobQuotaAtomic,
+  releaseJobQuotaAtomic,
   upgradeCompanyPlan,
   downgradeCompanyPlan,
 } from "../lib/billing/subscription";
 
 async function runBillingTests() {
   console.log("==================================================");
-  console.log("🧪 RUNNING PRODUCTION BILLING & USAGE SYSTEM TESTS");
+  console.log("🧪 RUNNING SUBSCRIPTION MONTHLY JOB QUOTA TESTS");
   console.log("==================================================\n");
 
   await connectToDatabase();
@@ -76,15 +78,15 @@ async function runBillingTests() {
     "getPlanConfig('PRO') returns 50 jobs limit"
   );
   assert(
-    getLimitExceededMessage().includes("Upgrade to Pro to create up to 50 jobs"),
-    "Limit exceeded message matches standard copy"
+    getLimitExceededMessage("FREE").includes("You've used all 2 job postings available on your Free plan. Upgrade to Pro for up to 50 job postings per month."),
+    "Limit exceeded message matches required copy"
   );
 
-  // --- TEST SUITE 2: Company Subscription & Usage Engine ---
+  // --- TEST SUITE 2: Company Subscription Initialization ---
   console.log("\n🏢 Test Suite 2: Company Creation & Default Free Subscription");
-  const testCompanySlug = `billing-test-${Date.now()}`;
+  const testCompanySlug = `quota-test-${Date.now()}`;
   const testCompany = await Company.create({
-    name: "Billing Test Corp",
+    name: "Quota Test Corp",
     slug: testCompanySlug,
     settings: {
       retentionDays: 365,
@@ -113,13 +115,19 @@ async function runBillingTests() {
     "Initial usage shows 0/2 used, 2 remaining, canCreateJob = true"
   );
 
-  // --- TEST SUITE 3: Server-side Job Limit Enforcement ---
-  console.log("\n🔒 Test Suite 3: Server-Side Job Limit Validation");
+  // --- TEST SUITE 3: Atomic Quota Consumption & Job Limit Enforcement ---
+  console.log("\n🔒 Test Suite 3: Atomic Quota Consumption (2/2 Free)");
 
-  // Create Job 1
+  // 1st Job creation quota consumption
+  const quota1 = await consumeJobQuotaAtomic(testCompany._id);
+  assert(
+    quota1.allowed === true && quota1.usage.jobsUsed === 1 && quota1.usage.jobsRemaining === 1,
+    "1st job quota reservation: 1/2 used, 1 remaining, allowed = true"
+  );
+
   const job1 = await Job.create({
     companyId: testCompany._id,
-    title: "Billing Test Job 1",
+    title: "Quota Test Job 1",
     slug: `${testCompanySlug}-job-1`,
     description: "Test description 1",
     status: "PUBLISHED",
@@ -127,19 +135,16 @@ async function runBillingTests() {
     employmentType: "FULL_TIME",
   });
 
-  usage = await getCompanyJobUsage(testCompany._id);
+  // 2nd Job creation quota consumption
+  const quota2 = await consumeJobQuotaAtomic(testCompany._id);
   assert(
-    usage.jobsUsed === 1 && usage.jobsRemaining === 1 && usage.canCreateJob === true,
-    "After 1st job: 1/2 used, 1 remaining, canCreateJob = true"
+    quota2.allowed === true && quota2.usage.jobsUsed === 2 && quota2.usage.jobsRemaining === 0,
+    "2nd job quota reservation: 2/2 used, 0 remaining, allowed = true"
   );
 
-  let check = await assertCanCreateJob(testCompany._id);
-  assert(check.allowed === true, "assertCanCreateJob allows 2nd job creation");
-
-  // Create Job 2
   const job2 = await Job.create({
     companyId: testCompany._id,
-    title: "Billing Test Job 2",
+    title: "Quota Test Job 2",
     slug: `${testCompanySlug}-job-2`,
     description: "Test description 2",
     status: "PUBLISHED",
@@ -147,61 +152,145 @@ async function runBillingTests() {
     employmentType: "FULL_TIME",
   });
 
+  // 3rd Job creation attempt (Must be strictly rejected)
+  const quota3 = await consumeJobQuotaAtomic(testCompany._id);
+  assert(
+    quota3.allowed === false,
+    "3rd job creation strictly rejected when 2/2 quota reached"
+  );
+  assert(
+    quota3.reason ===
+      "Monthly job limit reached. You've used all 2 job postings available on your Free plan. Upgrade to Pro for up to 50 job postings per month.",
+    "Rejection reason matches required copy exactly"
+  );
+
+  // --- TEST SUITE 4: Job Deletion Must NEVER Decrement Quota ---
+  console.log("\n🗑️ Test Suite 4: Deleting a Job Does NOT Restore Quota");
+
+  // Delete Job 1
+  await Job.findByIdAndDelete(job1._id);
+
+  // Verify usage remains 2/2
   usage = await getCompanyJobUsage(testCompany._id);
   assert(
     usage.jobsUsed === 2 && usage.jobsRemaining === 0 && usage.canCreateJob === false,
-    "After 2nd job: 2/2 used, 0 remaining, canCreateJob = false"
+    "After deleting job: Quota remains 2/2 used, 0 remaining, canCreateJob = false"
   );
 
-  // Check 3rd job creation attempt
-  check = await assertCanCreateJob(testCompany._id);
+  // Attempt creating another job after deletion
+  const quotaAfterDelete = await consumeJobQuotaAtomic(testCompany._id);
   assert(
-    check.allowed === false,
-    "assertCanCreateJob strictly rejects 3rd job creation on Free Plan"
-  );
-  assert(
-    Boolean(check.reason && check.reason.includes("Upgrade to Pro")),
-    "Rejection reason contains upgrade guidance to Pro tier"
+    quotaAfterDelete.allowed === false,
+    "Creation still rejected after deleting a job (quota is NOT restored)"
   );
 
-  // --- TEST SUITE 4: Plan Upgrade & Limit Expansion ---
-  console.log("\n⚡ Test Suite 4: Pro Plan Upgrade & Limit Expansion");
+  // --- TEST SUITE 5: Concurrent Job Creation Race Condition Protection ---
+  console.log("\n⚡ Test Suite 5: Concurrent Requests Race Condition Protection");
+  const concurrentCompanySlug = `concurrent-test-${Date.now()}`;
+  const concurrentCompany = await Company.create({
+    name: "Concurrent Test Corp",
+    slug: concurrentCompanySlug,
+    settings: { retentionDays: 365, allowPublicApplications: true, autoSyncSheets: true },
+  });
+  await getCompanySubscription(concurrentCompany._id);
+
+  // Fire 5 concurrent requests simultaneously on a 2-limit Free plan
+  const concurrentResults = await Promise.all([
+    consumeJobQuotaAtomic(concurrentCompany._id),
+    consumeJobQuotaAtomic(concurrentCompany._id),
+    consumeJobQuotaAtomic(concurrentCompany._id),
+    consumeJobQuotaAtomic(concurrentCompany._id),
+    consumeJobQuotaAtomic(concurrentCompany._id),
+  ]);
+
+  const successfulReservations = concurrentResults.filter((r) => r.allowed === true);
+  const rejectedReservations = concurrentResults.filter((r) => r.allowed === false);
+
+  assert(
+    successfulReservations.length === 2,
+    `Exactly 2 of 5 concurrent requests succeeded (${successfulReservations.length} allowed)`
+  );
+  assert(
+    rejectedReservations.length === 3,
+    `Exactly 3 of 5 concurrent requests were rejected (${rejectedReservations.length} rejected)`
+  );
+
+  const concurrentUsage = await getCompanyJobUsage(concurrentCompany._id);
+  assert(
+    concurrentUsage.jobsUsed === 2 && concurrentUsage.jobsRemaining === 0,
+    "Concurrent usage strictly capped at 2/2"
+  );
+
+  // --- TEST SUITE 6: Pro Plan Upgrade (Preserving Consumed Quota) ---
+  console.log("\n🚀 Test Suite 6: Free -> Pro Upgrade (Preserves Consumed Quota)");
   const upgradedUsage = await upgradeCompanyPlan(testCompany._id, "PRO");
   assert(
-    upgradedUsage.plan === "PRO",
-    "Company successfully upgraded to 'PRO' plan"
+    upgradedUsage.plan === "PRO" && upgradedUsage.jobsLimit === 50,
+    "Company successfully upgraded to PRO tier (limit = 50)"
   );
   assert(
-    upgradedUsage.jobsLimit === 50,
-    "Monthly limit expanded from 2 to 50 jobs"
+    upgradedUsage.jobsUsed === 2 && upgradedUsage.jobsRemaining === 48,
+    "Consumed quota preserved: 2/50 used, 48 remaining available"
   );
   assert(
-    upgradedUsage.jobsUsed === 2 && upgradedUsage.jobsRemaining === 48 && upgradedUsage.canCreateJob === true,
-    "Usage recalculates: 2/50 used, 48 remaining, canCreateJob = true"
+    upgradedUsage.canCreateJob === true,
+    "canCreateJob is true under expanded Pro tier"
   );
 
-  const proCheck = await assertCanCreateJob(testCompany._id);
+  // Consume another quota on Pro plan
+  const proQuota = await consumeJobQuotaAtomic(testCompany._id);
   assert(
-    proCheck.allowed === true,
-    "assertCanCreateJob now permits creating additional jobs under Pro tier"
+    proQuota.allowed === true && proQuota.usage.jobsUsed === 3 && proQuota.usage.jobsRemaining === 47,
+    "Pro tier consumes 3rd job: 3/50 used, 47 remaining"
   );
 
-  // --- TEST SUITE 5: Plan Downgrade ---
-  console.log("\n🔄 Test Suite 5: Downgrade back to Free Plan");
+  // --- TEST SUITE 7: Pro -> Free Downgrade (Preserving Consumed Quota) ---
+  console.log("\n🔄 Test Suite 7: Downgrade back to Free Plan");
   const downgradedUsage = await downgradeCompanyPlan(testCompany._id);
   assert(
     downgradedUsage.plan === "FREE" && downgradedUsage.jobsLimit === 2,
     "Downgrade switches company back to FREE tier (limit = 2)"
   );
   assert(
-    downgradedUsage.canCreateJob === false,
-    "Since 2 jobs already exist, canCreateJob immediately returns false on Free tier"
+    downgradedUsage.jobsUsed === 3 && downgradedUsage.jobsRemaining === 0 && downgradedUsage.canCreateJob === false,
+    "Since 3 jobs were consumed, usage is 3/2, 0 remaining, canCreateJob = false"
+  );
+
+  // --- TEST SUITE 8: Monthly Cycle Expiration & Quota Auto-Reset ---
+  console.log("\n⏰ Test Suite 8: Monthly Usage Period Roll-Forward & Reset");
+
+  // Fast forward testCompany's periodEnd to the past
+  await Company.updateOne(
+    { _id: testCompany._id },
+    {
+      $set: {
+        "subscription.currentPeriodEnd": new Date(Date.now() - 1000 * 60), // 1 min ago
+      },
+    }
+  );
+
+  // Verify that accessing usage rolls forward period and resets jobsUsedThisPeriod to 0
+  const resetUsage = await getCompanyJobUsage(testCompany._id);
+  assert(
+    resetUsage.jobsUsed === 0 && resetUsage.jobsRemaining === 2 && resetUsage.canCreateJob === true,
+    "After monthly period expires: Quota automatically resets to 0/2, 2 remaining"
+  );
+  assert(
+    new Date(resetUsage.currentPeriodEnd) > new Date(),
+    "New 30-day billing period generated into the future"
+  );
+
+  // Consume after reset
+  const postResetQuota = await consumeJobQuotaAtomic(testCompany._id);
+  assert(
+    postResetQuota.allowed === true && postResetQuota.usage.jobsUsed === 1,
+    "Job creation succeeds under fresh monthly period: 1/2 used"
   );
 
   // Cleanup test resources
   console.log("\n🧹 Cleaning up test database fixtures...");
-  await Job.deleteMany({ companyId: testCompany._id });
-  await Company.findByIdAndDelete(testCompany._id);
+  await Job.deleteMany({ companyId: { $in: [testCompany._id, concurrentCompany._id] } });
+  await Company.deleteMany({ _id: { $in: [testCompany._id, concurrentCompany._id] } });
 
   console.log("\n==================================================");
   console.log(`📊 TEST RESULTS: ${testPassed} Passed, ${testFailed} Failed`);

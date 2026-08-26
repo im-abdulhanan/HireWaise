@@ -5,9 +5,12 @@ import Job from "@/models/Job";
 import JobRequirement from "@/models/JobRequirement";
 import Application from "@/models/Application";
 import ScreeningResult from "@/models/ScreeningResult";
-import { slugify } from "@/lib/utils";
 import { Types } from "mongoose";
-import { assertCanCreateJob } from "@/lib/billing/subscription";
+import { slugify } from "@/lib/utils";
+import {
+  consumeJobQuotaAtomic,
+  releaseJobQuotaAtomic,
+} from "@/lib/billing/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -120,19 +123,19 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    // Server-side subscription & monthly job limit enforcement
-    const usageCheck = await assertCanCreateJob(tenant.companyId);
-    if (!usageCheck.allowed) {
+    // Server-side atomic subscription & monthly job limit enforcement
+    const quotaReservation = await consumeJobQuotaAtomic(tenant.companyId);
+    if (!quotaReservation.allowed) {
       return NextResponse.json(
         {
-          error: usageCheck.reason,
+          error: quotaReservation.reason,
           code: "PLAN_LIMIT_REACHED",
           usage: {
-            plan: usageCheck.usage.plan,
-            jobsUsed: usageCheck.usage.jobsUsed,
-            jobsLimit: usageCheck.usage.jobsLimit,
-            jobsRemaining: usageCheck.usage.jobsRemaining,
-            currentPeriodEnd: usageCheck.usage.currentPeriodEnd,
+            plan: quotaReservation.usage.plan,
+            jobsUsed: quotaReservation.usage.jobsUsed,
+            jobsLimit: quotaReservation.usage.jobsLimit,
+            jobsRemaining: quotaReservation.usage.jobsRemaining,
+            currentPeriodEnd: quotaReservation.usage.currentPeriodEnd,
           },
         },
         { status: 403 }

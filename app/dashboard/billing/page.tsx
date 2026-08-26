@@ -253,10 +253,10 @@ export default function BillingPage() {
           <div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Monthly Job Creation Limit
+                Monthly Job Usage
               </span>
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                className={`text-xs font-bold px-2.5 py-0.5 rounded-md ${
                   (data?.usagePercentage ?? 0) >= 100
                     ? "bg-rose-100 text-rose-800 border border-rose-200"
                     : (data?.usagePercentage ?? 0) >= 80
@@ -264,7 +264,7 @@ export default function BillingPage() {
                     : "bg-emerald-100 text-emerald-800 border border-emerald-200"
                 }`}
               >
-                {data?.jobsUsed ?? 0} of {data?.jobsLimit ?? 2} Used
+                {data?.jobsUsed ?? 0} / {data?.jobsLimit ?? 2} Jobs Used
               </span>
             </div>
 
@@ -273,7 +273,7 @@ export default function BillingPage() {
                 <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
                   {data?.jobsRemaining ?? 0}
                 </span>
-                <span className="text-xs text-slate-500 ml-1.5 font-medium">jobs remaining</span>
+                <span className="text-xs text-slate-500 ml-1.5 font-medium">remaining</span>
               </div>
               <span className="text-xs font-bold text-slate-700">
                 {data?.usagePercentage ?? 0}%
@@ -299,10 +299,17 @@ export default function BillingPage() {
 
           <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
             {!data?.canCreateJob ? (
-              <p className="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                <span>Monthly job limit reached. Upgrade to Pro to post more jobs.</span>
-              </p>
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-rose-600 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  <span>Monthly job limit reached</span>
+                </p>
+                <p className="text-[11px] text-slate-500">
+                  {isPro
+                    ? "You've used all 50 job postings available on your Pro plan for this period."
+                    : "You've used all 2 job postings available on your Free plan. Upgrade to Pro for up to 50 job postings per month."}
+                </p>
+              </div>
             ) : (
               <p className="text-[11px] text-slate-500">
                 Job quotas reset automatically at the end of every 30-day billing cycle.

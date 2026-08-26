@@ -281,9 +281,9 @@ export function JobForm({ initialData, isEditing = false }: JobFormProps) {
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <p className="font-bold text-purple-950">Monthly Job Limit Reached</p>
+              <p className="font-bold text-purple-950">Monthly job limit reached</p>
               <p className="text-xs text-purple-800 mt-0.5">
-                You've reached your monthly job limit. Upgrade to Pro to create up to 50 jobs per month.
+                You&apos;ve used all 2 job postings available on your Free plan. Upgrade to Pro for up to 50 job postings per month.
               </p>
             </div>
           </div>

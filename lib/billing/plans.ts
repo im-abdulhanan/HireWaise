@@ -77,6 +77,9 @@ export function getAllPlans(): PlanConfig[] {
 /**
  * Standard limit exceeded message.
  */
-export function getLimitExceededMessage(): string {
-  return "You've reached your monthly job limit. Upgrade to Pro to create up to 50 jobs per month.";
+export function getLimitExceededMessage(plan?: PlanTier | string): string {
+  if (plan === "PRO") {
+    return "Monthly job limit reached. You've used all 50 job postings available on your Pro plan for this monthly period. Quota will reset on your next billing date.";
+  }
+  return "Monthly job limit reached. You've used all 2 job postings available on your Free plan. Upgrade to Pro for up to 50 job postings per month.";
 }

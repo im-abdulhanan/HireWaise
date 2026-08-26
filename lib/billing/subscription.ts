@@ -1,7 +1,6 @@
 import { Types } from "mongoose";
 import connectToDatabase from "@/lib/db/mongodb";
 import Company, { ICompany } from "@/models/Company";
-import Job from "@/models/Job";
 import {
   PlanTier,
   PlanConfig,
@@ -42,7 +41,8 @@ export function calculateBillingPeriod(referenceDate: Date = new Date()): {
 
 /**
  * Retrieves and ensures valid subscription state for a company.
- * Rolls the billing period forward if the active cycle has elapsed.
+ * Rolls the billing period forward and resets jobsUsedThisPeriod to 0
+ * if the active monthly cycle has elapsed.
  */
 export async function getCompanySubscription(
   companyId: string | Types.ObjectId
@@ -57,21 +57,26 @@ export async function getCompanySubscription(
   const now = new Date();
 
   // If company has no subscription or missing period dates, initialize default FREE plan
-  if (!company.subscription || !company.subscription.currentPeriodStart || !company.subscription.currentPeriodEnd) {
+  if (
+    !company.subscription ||
+    !company.subscription.currentPeriodStart ||
+    !company.subscription.currentPeriodEnd
+  ) {
     const { start, end } = calculateBillingPeriod(now);
     company.subscription = {
       plan: "FREE",
       status: "ACTIVE",
       currentPeriodStart: start,
       currentPeriodEnd: end,
+      jobsUsedThisPeriod: company.subscription?.jobsUsedThisPeriod || 0,
       cancelAtPeriodEnd: false,
     };
     await company.save();
     return company;
   }
 
-  // If billing cycle has expired, roll forward the 30-day cycle
-  if (now > new Date(company.subscription.currentPeriodEnd)) {
+  // If billing cycle has expired, roll forward the 30-day cycle and reset quota
+  if (now >= new Date(company.subscription.currentPeriodEnd)) {
     let periodStart = new Date(company.subscription.currentPeriodEnd);
     // If it expired long ago, reset start to now
     if (now.getTime() - periodStart.getTime() > 30 * 24 * 60 * 60 * 1000) {
@@ -80,6 +85,7 @@ export async function getCompanySubscription(
     const { start, end } = calculateBillingPeriod(periodStart);
     company.subscription.currentPeriodStart = start;
     company.subscription.currentPeriodEnd = end;
+    company.subscription.jobsUsedThisPeriod = 0; // Quota resets at new period
     await company.save();
   }
 
@@ -88,6 +94,7 @@ export async function getCompanySubscription(
 
 /**
  * Calculates current job usage against the monthly limit for a company.
+ * Usage tracks jobs created during the current usage period, not active jobs.
  */
 export async function getCompanyJobUsage(
   companyId: string | Types.ObjectId
@@ -101,15 +108,8 @@ export async function getCompanyJobUsage(
   const periodStart = new Date(sub.currentPeriodStart);
   const periodEnd = new Date(sub.currentPeriodEnd);
 
-  // Count jobs created in current billing window
-  const jobsUsed = await Job.countDocuments({
-    companyId: company._id,
-    createdAt: {
-      $gte: periodStart,
-      $lte: periodEnd,
-    },
-  });
-
+  // Quota counter tracked on company subscription
+  const jobsUsed = Number(sub.jobsUsedThisPeriod || 0);
   const jobsLimit = planConfig.monthlyJobLimit;
   const jobsRemaining = Math.max(0, jobsLimit - jobsUsed);
   const canCreateJob = jobsUsed < jobsLimit;
@@ -152,7 +152,7 @@ export async function assertCanCreateJob(
   if (!usage.canCreateJob) {
     return {
       allowed: false,
-      reason: getLimitExceededMessage(),
+      reason: getLimitExceededMessage(usage.plan),
       usage,
     };
   }
@@ -164,7 +164,76 @@ export async function assertCanCreateJob(
 }
 
 /**
+ * Atomically verifies and consumes 1 job creation quota slot for the company.
+ * Prevents race conditions from concurrent requests bypassing monthly limits.
+ */
+export async function consumeJobQuotaAtomic(
+  companyId: string | Types.ObjectId
+): Promise<{
+  allowed: boolean;
+  reason?: string;
+  usage: CompanyJobUsage;
+}> {
+  await connectToDatabase();
+
+  // 1. Ensure cycle is rolled forward if expired
+  const company = await getCompanySubscription(companyId);
+  const sub = company.subscription!;
+  const planConfig = getPlanConfig(sub.plan);
+  const limit = planConfig.monthlyJobLimit;
+
+  // 2. Atomic findOneAndUpdate with condition that jobsUsedThisPeriod < limit
+  const updatedCompany = await Company.findOneAndUpdate(
+    {
+      _id: company._id,
+      "subscription.jobsUsedThisPeriod": { $lt: limit },
+    },
+    {
+      $inc: { "subscription.jobsUsedThisPeriod": 1 },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!updatedCompany) {
+    // Quota reached or concurrent requests took the last available spots
+    const currentUsage = await getCompanyJobUsage(companyId);
+    return {
+      allowed: false,
+      reason: getLimitExceededMessage(currentUsage.plan),
+      usage: currentUsage,
+    };
+  }
+
+  const updatedUsage = await getCompanyJobUsage(companyId);
+  return {
+    allowed: true,
+    usage: updatedUsage,
+  };
+}
+
+/**
+ * Rollback quota consumption in the event of an unexpected database failure during job creation.
+ */
+export async function releaseJobQuotaAtomic(
+  companyId: string | Types.ObjectId
+): Promise<void> {
+  await connectToDatabase();
+  await Company.updateOne(
+    {
+      _id: companyId,
+      "subscription.jobsUsedThisPeriod": { $gt: 0 },
+    },
+    {
+      $inc: { "subscription.jobsUsedThisPeriod": -1 },
+    }
+  );
+}
+
+/**
  * Upgrades a company to the PRO plan ($10/mo, 50 jobs).
+ * Preserves jobs consumed in the current usage period (e.g. 2/2 Free becomes 2/50 Pro).
  */
 export async function upgradeCompanyPlan(
   companyId: string | Types.ObjectId,
@@ -176,12 +245,14 @@ export async function upgradeCompanyPlan(
   const existingStart = company.subscription?.currentPeriodStart || new Date();
   const existingEnd =
     company.subscription?.currentPeriodEnd || calculateBillingPeriod(existingStart).end;
+  const currentUsed = Number(company.subscription?.jobsUsedThisPeriod || 0);
 
   company.subscription = {
     plan: targetPlan,
     status: "ACTIVE",
     currentPeriodStart: existingStart,
     currentPeriodEnd: existingEnd,
+    jobsUsedThisPeriod: currentUsed, // Preserve consumed quota
     cancelAtPeriodEnd: false,
     stripeCustomerId: company.subscription?.stripeCustomerId,
     stripeSubscriptionId: company.subscription?.stripeSubscriptionId,
@@ -193,6 +264,7 @@ export async function upgradeCompanyPlan(
 
 /**
  * Downgrades a company back to the FREE plan ($0/mo, 2 jobs).
+ * Preserves consumed quota.
  */
 export async function downgradeCompanyPlan(
   companyId: string | Types.ObjectId
@@ -203,12 +275,14 @@ export async function downgradeCompanyPlan(
   const existingStart = company.subscription?.currentPeriodStart || new Date();
   const existingEnd =
     company.subscription?.currentPeriodEnd || calculateBillingPeriod(existingStart).end;
+  const currentUsed = Number(company.subscription?.jobsUsedThisPeriod || 0);
 
   company.subscription = {
     plan: "FREE",
     status: "ACTIVE",
     currentPeriodStart: existingStart,
     currentPeriodEnd: existingEnd,
+    jobsUsedThisPeriod: currentUsed, // Preserve consumed quota
     cancelAtPeriodEnd: false,
     stripeCustomerId: company.subscription?.stripeCustomerId,
     stripeSubscriptionId: company.subscription?.stripeSubscriptionId,
