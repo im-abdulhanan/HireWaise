@@ -6,8 +6,8 @@ import GoogleIntegration from "@/models/GoogleIntegration";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/google/status
- * Legacy alias for /api/integrations/google-sheets/status
+ * GET /api/integrations/google-sheets/status
+ * Returns connection and linked spreadsheet status for the authenticated company.
  */
 export async function GET(req: NextRequest) {
   try {

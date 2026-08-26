@@ -5,8 +5,8 @@ import { disconnectGoogleIntegration } from "@/lib/google/oauth";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/google/disconnect
- * Legacy alias for /api/integrations/google-sheets/disconnect
+ * POST /api/integrations/google-sheets/disconnect
+ * Disconnects and removes Google Sheets integration for the authenticated company.
  */
 export async function POST(req: NextRequest) {
   try {

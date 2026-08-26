@@ -5,8 +5,8 @@ import { getGoogleAuthUrl } from "@/lib/google/oauth";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/google/connect
- * Legacy alias for /api/integrations/google-sheets/connect
+ * GET /api/integrations/google-sheets/connect
+ * Initiates the Google OAuth 2.0 flow for Google Sheets integration.
  */
 export async function GET(req: NextRequest) {
   try {

@@ -5,8 +5,8 @@ import { syncCandidatesToGoogleSheet } from "@/lib/google/sheets";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/google/sheets/sync
- * Legacy alias for /api/integrations/google-sheets/sync
+ * POST /api/integrations/google-sheets/sync
+ * Synchronizes verified candidate screening results to the linked Google Sheet.
  */
 export async function POST(req: NextRequest) {
   try {

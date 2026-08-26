@@ -5,11 +5,13 @@ import { createScreeningSpreadsheet } from "@/lib/google/sheets";
 export const dynamic = "force-dynamic";
 
 /**
- * POST /api/google/sheets/create
- * Legacy alias for /api/integrations/google-sheets/create
+ * POST /api/integrations/google-sheets/create
+ * Creates a new 17-column candidate screening Google Spreadsheet
+ * for the authenticated HireWise company workspace.
  */
 export async function POST(req: NextRequest) {
   try {
+    // 1. Authenticate HireWise session
     const tenant = await getTenantContext();
     if (!tenant) {
       return unauthorizedResponse("HireWise session expired or invalid. Please sign in to HireWise.");
@@ -21,6 +23,7 @@ export async function POST(req: NextRequest) {
       customTitle ||
       `${tenant.name || "HireWise"} - Candidate Screening Pipeline (${new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })})`;
 
+    // 2. Create spreadsheet using authenticated Google connection
     const result = await createScreeningSpreadsheet(tenant.companyId, title);
 
     return NextResponse.json({

@@ -16,7 +16,7 @@ export interface ResponsibilityItem {
 
 export interface QualificationItem {
   label: string;
-  title: string; // alias for backwards compatibility
+  title?: string; // alias for backwards compatibility
   description: string;
 }
 

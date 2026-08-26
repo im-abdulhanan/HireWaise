@@ -3,45 +3,52 @@ import { handleGoogleOAuthCallback } from "@/lib/google/oauth";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/google/callback
+ * Legacy alias for /api/integrations/google-sheets/callback
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
-    const companyId = searchParams.get("state");
+    const state = searchParams.get("state");
     const error = searchParams.get("error");
 
     if (error) {
-      return NextResponse.redirect(
-        new URL(
-          `/dashboard/integrations/google?error=${encodeURIComponent(error)}`,
-          req.url
-        )
-      );
+      const errorMessage =
+        error === "access_denied"
+          ? "Google Sheets authorization was canceled by the user."
+          : `Google authorization failed: ${error}`;
+
+      const redirectUrl = new URL("/dashboard/integrations/google", req.url);
+      redirectUrl.searchParams.set("error", errorMessage);
+      return NextResponse.redirect(redirectUrl);
     }
 
-    if (!code || !companyId) {
-      return NextResponse.redirect(
-        new URL(
-          "/dashboard/integrations/google?error=Missing+authorization+code+or+state",
-          req.url
-        )
+    if (!code || !state) {
+      const redirectUrl = new URL("/dashboard/integrations/google", req.url);
+      redirectUrl.searchParams.set(
+        "error",
+        "Invalid authorization response: missing authorization code or state token."
       );
+      return NextResponse.redirect(redirectUrl);
     }
 
-    await handleGoogleOAuthCallback(code, companyId);
+    const result = await handleGoogleOAuthCallback(code, state);
 
-    return NextResponse.redirect(
-      new URL("/dashboard/integrations/google?success=connected", req.url)
-    );
+    const targetPath =
+      result.from === "settings"
+        ? "/dashboard/settings?tab=integrations&success=google_connected"
+        : "/dashboard/integrations/google?success=connected";
+
+    return NextResponse.redirect(new URL(targetPath, req.url));
   } catch (error: any) {
-    console.error("Google OAuth callback error:", error);
-    return NextResponse.redirect(
-      new URL(
-        `/dashboard/integrations/google?error=${encodeURIComponent(
-          error.message || "Failed to complete Google authorization."
-        )}`,
-        req.url
-      )
+    console.error("Google OAuth callback error:", error?.message || error);
+    const redirectUrl = new URL("/dashboard/integrations/google", req.url);
+    redirectUrl.searchParams.set(
+      "error",
+      error.message || "Failed to complete Google authorization."
     );
+    return NextResponse.redirect(redirectUrl);
   }
 }

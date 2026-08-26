@@ -32,6 +32,7 @@ export default function GoogleSheetsIntegrationPage() {
   const [disconnecting, setDisconnecting] = useState(false);
 
   const [message, setMessage] = useState<string | null>(null);
+  const [createdSheetUrl, setCreatedSheetUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const successParam = searchParams.get("success");
@@ -39,13 +40,13 @@ export default function GoogleSheetsIntegrationPage() {
 
   const fetchStatus = async () => {
     try {
-      const res = await fetch("/api/google/status");
+      const res = await fetch("/api/integrations/google-sheets/status");
       const json = await res.json();
       if (json.success) {
         setData(json.data);
       }
     } catch (err) {
-      console.error("Failed to load Google status:", err);
+      console.error("Failed to load Google Sheets status:", err);
     } finally {
       setLoading(false);
     }
@@ -55,7 +56,7 @@ export default function GoogleSheetsIntegrationPage() {
     fetchStatus();
 
     if (successParam === "connected" || successParam === "google_connected") {
-      setMessage("Google Sheets Connected successfully with OAuth 2.0!");
+      setMessage("Google account successfully connected with OAuth 2.0!");
     }
     if (errorParam) {
       setError(decodeURIComponent(errorParam));
@@ -69,7 +70,7 @@ export default function GoogleSheetsIntegrationPage() {
     setMessage(null);
 
     try {
-      const res = await fetch("/api/google/connect", {
+      const res = await fetch("/api/integrations/google-sheets/connect?from=integrations", {
         headers: { Accept: "application/json" },
       });
       const json = await res.json();
@@ -92,7 +93,7 @@ export default function GoogleSheetsIntegrationPage() {
     setError(null);
 
     try {
-      const res = await fetch("/api/google/sheets/sync", { method: "POST" });
+      const res = await fetch("/api/integrations/google-sheets/sync", { method: "POST" });
       const json = await res.json();
 
       if (!res.ok || !json.success) {
@@ -113,16 +114,24 @@ export default function GoogleSheetsIntegrationPage() {
     setCreatingSheet(true);
     setMessage(null);
     setError(null);
+    setCreatedSheetUrl(null);
 
     try {
-      const res = await fetch("/api/google/sheets/create", { method: "POST" });
+      const res = await fetch("/api/integrations/google-sheets/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
       const json = await res.json();
 
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Failed to create Google Spreadsheet.");
       }
 
-      setMessage("New 17-column screening spreadsheet created and linked!");
+      setMessage("Google Sheet Created");
+      if (json.data?.spreadsheetUrl) {
+        setCreatedSheetUrl(json.data.spreadsheetUrl);
+      }
       await fetchStatus();
     } catch (err: any) {
       setError(err.message || "Failed to create spreadsheet.");
@@ -133,16 +142,23 @@ export default function GoogleSheetsIntegrationPage() {
 
   // Disconnect
   const handleDisconnect = async () => {
-    if (!confirm("Are you sure you want to disconnect your Google Sheets integration? Stored tokens will be permanently revoked.")) {
+    if (
+      !confirm(
+        "Are you sure you want to disconnect your Google Sheets integration? Stored tokens will be permanently revoked."
+      )
+    ) {
       return;
     }
 
     setDisconnecting(true);
     setMessage(null);
     setError(null);
+    setCreatedSheetUrl(null);
 
     try {
-      const res = await fetch("/api/google/disconnect", { method: "POST" });
+      const res = await fetch("/api/integrations/google-sheets/disconnect", {
+        method: "POST",
+      });
       const json = await res.json();
 
       if (!res.ok || !json.success) {
@@ -191,9 +207,22 @@ export default function GoogleSheetsIntegrationPage() {
 
       {/* Notifications */}
       {message && (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">
-          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>{message}</span>
+        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-900 shadow-xs">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            <span className="font-semibold">{message}</span>
+          </div>
+          {createdSheetUrl && (
+            <a
+              href={createdSheetUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-white px-3 py-1 rounded-lg border border-emerald-300 hover:bg-emerald-100 transition-colors shadow-2xs"
+            >
+              <span>Open Google Sheet</span>
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
         </div>
       )}
 
@@ -201,6 +230,19 @@ export default function GoogleSheetsIntegrationPage() {
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-xs text-red-800">
           <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
           <span>{error}</span>
+        </div>
+      )}
+
+      {/* In-Flight Creation Progress Banner */}
+      {creatingSheet && (
+        <div className="flex items-center gap-3.5 p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 shadow-xs animate-in fade-in duration-200">
+          <RefreshCw className="h-5 w-5 animate-spin text-blue-600 shrink-0" />
+          <div>
+            <p className="font-bold text-blue-950">Creating your Google Sheet...</p>
+            <p className="text-[11px] text-blue-700 mt-0.5">
+              Setting up the 17-column candidate screening structure in your Google Drive...
+            </p>
+          </div>
         </div>
       )}
 
@@ -292,10 +334,10 @@ export default function GoogleSheetsIntegrationPage() {
                   size="sm"
                   onClick={handleCreateSheet}
                   disabled={creatingSheet || syncing}
-                  className="gap-1.5 text-xs"
+                  className="gap-1.5 text-xs font-semibold"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  <span>{creatingSheet ? "Creating..." : "Create New Sheet"}</span>
+                  <span>{creatingSheet ? "Creating Sheet..." : "Create New Sheet"}</span>
                 </Button>
 
                 <Button
@@ -314,8 +356,12 @@ export default function GoogleSheetsIntegrationPage() {
               <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Spreadsheet Title</p>
-                    <p className="text-sm font-bold text-slate-900 mt-0.5">{data.spreadsheetTitle || "HireWise Screening Results"}</p>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Spreadsheet Name
+                    </p>
+                    <p className="text-sm font-bold text-slate-900 mt-0.5">
+                      {data.spreadsheetTitle || "HireWise Screening Results"}
+                    </p>
                   </div>
 
                   {data.spreadsheetUrl && (
@@ -325,7 +371,7 @@ export default function GoogleSheetsIntegrationPage() {
                       rel="noopener noreferrer"
                     >
                       <Button size="sm" variant="outline" className="gap-1.5 text-xs bg-white">
-                        <span>Open in Google Sheets</span>
+                        <span>Open Sheet</span>
                         <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
                       </Button>
                     </a>
@@ -335,15 +381,21 @@ export default function GoogleSheetsIntegrationPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-3 border-t border-slate-200 text-xs">
                   <div>
                     <span className="text-slate-500">Spreadsheet ID:</span>
-                    <p className="font-mono text-slate-800 text-[11px] truncate mt-0.5">{data.spreadsheetId}</p>
+                    <p className="font-mono text-slate-800 text-[11px] truncate mt-0.5">
+                      {data.spreadsheetId}
+                    </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Sync Status:</span>
-                    <p className="font-semibold text-slate-900 mt-0.5">{data.syncStatus || "IDLE"}</p>
+                    <p className="font-semibold text-slate-900 mt-0.5">
+                      {data.syncStatus || "IDLE"}
+                    </p>
                   </div>
                   <div>
                     <span className="text-slate-500">Last Synced:</span>
-                    <p className="text-slate-800 mt-0.5">{data.lastSyncedAt ? formatDateTime(data.lastSyncedAt) : "Never synced yet"}</p>
+                    <p className="text-slate-800 mt-0.5">
+                      {data.lastSyncedAt ? formatDateTime(data.lastSyncedAt) : "Never synced yet"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -359,15 +411,22 @@ export default function GoogleSheetsIntegrationPage() {
 
           {/* Standard 17-Column Schema Preview */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
-            <h4 className="text-sm font-bold text-slate-900 mb-2">Standardized 17-Column Data Schema</h4>
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              Standardized 17-Column Data Schema
+            </h4>
             <p className="text-xs text-slate-500 mb-4">
               HireWise exports candidate screening records strictly formatted into 17 standardized columns:
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-xs">
               {SCREENING_SHEET_HEADERS.map((header, idx) => (
-                <div key={idx} className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100">
-                  <span className="font-mono text-[10px] text-slate-400 font-semibold w-4 text-right">{idx + 1}.</span>
+                <div
+                  key={idx}
+                  className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 border border-slate-100"
+                >
+                  <span className="font-mono text-[10px] text-slate-400 font-semibold w-4 text-right">
+                    {idx + 1}.
+                  </span>
                   <span className="text-slate-800 font-medium truncate">{header}</span>
                 </div>
               ))}

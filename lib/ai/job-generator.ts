@@ -20,6 +20,7 @@ const JobDescriptionGenerationSchema = z.object({
     .array(
       z.object({
         label: z.string().min(1, "Requirement label is required"),
+        title: z.string().optional(),
         description: z.string().min(1, "Requirement description is required"),
       })
     )
