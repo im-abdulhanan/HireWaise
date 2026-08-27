@@ -26,10 +26,12 @@
     "test:job-description": "tsx tests/job-description-structure.test.ts",
     "test:currency-salary": "tsx tests/currency-salary.test.ts",
     "test:google-oauth": "tsx tests/google-sheets-oauth.test.ts",
+    "test:stripe": "tsx tests/stripe-payment.test.ts",
     "esco:import": "tsx scripts/import-esco.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
+    "@stripe/stripe-js": "^9.14.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "googleapis": "^140.0.1",
@@ -41,6 +43,7 @@
     "pdf-parse": "^1.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "stripe": "^22.6.0",
     "tailwind-merge": "^2.5.2",
     "zod": "^3.23.8"
   },

@@ -14,6 +14,7 @@ import {
   Briefcase,
   Layers,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,8 @@ interface BillingUsage {
   currentPeriodEnd: string;
   daysRemaining: number;
   cancelAtPeriodEnd: boolean;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export default function BillingPage() {
@@ -72,6 +75,14 @@ export default function BillingPage() {
 
   useEffect(() => {
     loadBillingData();
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("success") === "true") {
+        setSuccessMessage("Payment successful! Your workspace has been upgraded to the Pro Plan.");
+      } else if (urlParams.get("canceled") === "true") {
+        setErrorMessage("Checkout was canceled. You remain on your current plan.");
+      }
+    }
   }, []);
 
   async function handleUpgrade() {
@@ -79,27 +90,65 @@ export default function BillingPage() {
     setErrorMessage(null);
     setSuccessMessage(null);
     try {
-      const res = await fetch("/api/billing/upgrade", {
+      // 1. Try Stripe Checkout
+      const res = await fetch("/api/billing/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (json.success && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+
+      // 2. Fallback to direct plan activation if Stripe is in test/mock mode
+      const fallbackRes = await fetch("/api/billing/upgrade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: "PRO" }),
       });
-      const json = await res.json();
-      if (json.success) {
-        setSuccessMessage(json.message || "Upgraded to Pro Plan successfully!");
+      const fallbackJson = await fallbackRes.json();
+      if (fallbackJson.success) {
+        setSuccessMessage(fallbackJson.message || "Upgraded to Pro Plan successfully!");
         await loadBillingData();
       } else {
-        setErrorMessage(json.error || "Failed to upgrade subscription.");
+        setErrorMessage(fallbackJson.error || json.error || "Failed to upgrade subscription.");
       }
     } catch {
-      setErrorMessage("Failed to process plan upgrade. Please try again.");
+      setErrorMessage("Failed to initiate checkout. Please try again.");
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleOpenPortal() {
+    setActionLoading("portal");
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const res = await fetch("/api/billing/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const json = await res.json();
+      if (json.success && json.url) {
+        window.location.href = json.url;
+        return;
+      }
+      setErrorMessage(json.error || "Stripe Customer Portal is not available yet.");
+    } catch {
+      setErrorMessage("Failed to open Stripe Billing Portal.");
     } finally {
       setActionLoading(null);
     }
   }
 
   async function handleDowngrade() {
-    if (!confirm("Are you sure you want to switch to the Free Plan? Your monthly limit will be 2 jobs.")) {
+    if (
+      !confirm(
+        "Are you sure you want to switch to the Free Plan? Your monthly limit will be 2 jobs."
+      )
+    ) {
       return;
     }
     setActionLoading("downgrade");
@@ -165,7 +214,7 @@ export default function BillingPage() {
 
       {/* Alerts */}
       {successMessage && (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-900 shadow-xs">
+        <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-900 shadow-xs animate-in fade-in">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>{successMessage}</span>
@@ -180,7 +229,7 @@ export default function BillingPage() {
       )}
 
       {errorMessage && (
-        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-900 shadow-xs">
+        <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-900 shadow-xs animate-in fade-in">
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
             <span>{errorMessage}</span>
@@ -327,8 +376,8 @@ export default function BillingPage() {
                   <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : (
                   <>
-                    <span>Upgrade</span>
-                    <Sparkles className="h-3 w-3 text-purple-300" />
+                    <span>Upgrade to Pro</span>
+                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
                   </>
                 )}
               </Button>
@@ -337,24 +386,18 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Plan Comparison Section */}
-      <div className="space-y-4 pt-4">
+      {/* Pricing Comparison Table & Plan Selection */}
+      <div className="space-y-4">
         <div>
           <h2 className="text-lg font-bold text-slate-900 tracking-tight">Available Subscription Plans</h2>
           <p className="text-xs text-slate-500">
-            Choose the plan that best aligns with your hiring volume. Upgrade or downgrade anytime.
+            Choose the plan that best fits your recruitment team volume and candidate screening pipeline.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
-          {/* FREE PLAN TIER CARD */}
-          <div
-            className={`rounded-2xl border p-6 sm:p-8 flex flex-col justify-between transition-all ${
-              !isPro
-                ? "border border-slate-300 bg-white shadow-sm relative"
-                : "border border-slate-200 bg-slate-50/50 hover:bg-white"
-            }`}
-          >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Free Plan Card */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-all">
             <div>
               <div className="flex items-center justify-between">
                 <div>
@@ -364,8 +407,8 @@ export default function BillingPage() {
                   </p>
                 </div>
                 {!isPro && (
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-200">
-                    Current Plan
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                    Active
                   </span>
                 )}
               </div>
@@ -378,7 +421,7 @@ export default function BillingPage() {
               <ul className="mt-6 space-y-3">
                 <li className="flex items-start gap-2.5 text-xs text-slate-700 font-medium">
                   <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Up to 2 Active Jobs</strong> per month</span>
+                  <span>Up to 2 Active Jobs per month</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-xs text-slate-700">
                   <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -386,7 +429,7 @@ export default function BillingPage() {
                 </li>
                 <li className="flex items-start gap-2.5 text-xs text-slate-700">
                   <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span>Evidence Citations & Verbatim Quotes</span>
+                  <span>Evidence Citations & Reasonings</span>
                 </li>
                 <li className="flex items-start gap-2.5 text-xs text-slate-700">
                   <Check className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -399,43 +442,44 @@ export default function BillingPage() {
               </ul>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-200">
+            <div className="mt-8 pt-6 border-t border-slate-100">
               {!isPro ? (
-                <Button disabled className="w-full text-xs font-semibold bg-slate-100 text-slate-400 border border-slate-200">
-                  Current Plan
-                </Button>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">Your current plan</span>
+                  <Button disabled variant="outline" className="text-xs">
+                    Current Plan
+                  </Button>
+                </div>
               ) : (
                 <Button
                   variant="outline"
                   onClick={handleDowngrade}
-                  disabled={Boolean(actionLoading)}
-                  className="w-full text-xs font-semibold hover:bg-slate-100"
+                  disabled={actionLoading === "downgrade"}
+                  className="w-full text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 >
-                  {actionLoading === "downgrade" ? "Switching..." : "Switch to Free Plan"}
+                  {actionLoading === "downgrade" ? "Switching..." : "Downgrade to Free Plan"}
                 </Button>
               )}
             </div>
           </div>
 
-          {/* PRO PLAN TIER CARD */}
-          <div
-            className={`rounded-2xl p-6 sm:p-8 flex flex-col justify-between transition-all ${
-              isPro
-                ? "border border-neutral-700 bg-black text-white shadow-xl relative"
-                : "border border-neutral-800 bg-neutral-950 text-white shadow-lg relative"
-            }`}
-          >
+          {/* Pro Plan Card */}
+          <div className="rounded-2xl border-2 border-purple-500/80 bg-gradient-to-b from-[#19191a] to-[#252528] p-6 sm:p-8 flex flex-col justify-between shadow-lg relative overflow-hidden text-white">
+            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl tracking-wider uppercase flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              <span>Recommended</span>
+            </div>
+
             <div>
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-white">Pro Plan</h3>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white border border-white/20">
-                      <Sparkles className="h-2.5 w-2.5 text-purple-300" />
-                      Recommended
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <span>Pro Plan</span>
+                    <span className="text-[10px] bg-purple-500/30 text-purple-200 px-2 py-0.5 rounded-full border border-purple-400/30">
+                      Stripe Checkout
                     </span>
-                  </div>
-                  <p className="text-xs text-neutral-400 mt-0.5">
+                  </h3>
+                  <p className="text-xs text-neutral-300 mt-0.5">
                     For recruiters and growing teams needing higher screening volume.
                   </p>
                 </div>
@@ -483,8 +527,19 @@ export default function BillingPage() {
               {isPro ? (
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-purple-300 font-semibold">Your current active plan</span>
-                  <Button disabled className="text-xs font-bold bg-white/20 text-white">
-                    Subscribed
+                  <Button
+                    onClick={handleOpenPortal}
+                    disabled={actionLoading === "portal"}
+                    className="text-xs font-bold bg-white text-black hover:bg-neutral-200 gap-1"
+                  >
+                    {actionLoading === "portal" ? (
+                      "Opening Portal..."
+                    ) : (
+                      <>
+                        <span>Manage Subscription</span>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </>
+                    )}
                   </Button>
                 </div>
               ) : (
@@ -497,7 +552,8 @@ export default function BillingPage() {
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
                   ) : (
                     <>
-                      <span>Upgrade to Pro ($10/mo)</span>
+                      <CreditCard className="h-3.5 w-3.5" />
+                      <span>Upgrade via Stripe ($10/mo)</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </>
                   )}
@@ -516,14 +572,14 @@ export default function BillingPage() {
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Payment & Invoice History</h3>
+              <h3 className="text-sm font-bold text-slate-900">Stripe Payment & Invoice History</h3>
               <p className="text-xs text-slate-500">
-                All subscriptions include 256-bit encrypted checkout and automated invoices.
+                All subscriptions include 256-bit encrypted Stripe checkout and automated receipt invoices.
               </p>
             </div>
           </div>
           <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
-            PCI Compliant
+            Stripe PCI Compliant
           </span>
         </div>
 
@@ -536,9 +592,22 @@ export default function BillingPage() {
               Cycle: {formatDate(data?.currentPeriodStart)} — {formatDate(data?.currentPeriodEnd)}
             </p>
           </div>
-          <div className="text-right">
-            <p className="font-bold text-slate-900">{isPro ? "$10.00 USD" : "$0.00 USD"}</p>
-            <span className="text-[10px] font-semibold text-emerald-600">PAID</span>
+          <div className="text-right flex items-center gap-3">
+            <div>
+              <p className="font-bold text-slate-900">{isPro ? "$10.00 USD" : "$0.00 USD"}</p>
+              <span className="text-[10px] font-semibold text-emerald-600">PAID</span>
+            </div>
+            {isPro && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleOpenPortal}
+                className="text-xs font-semibold gap-1 bg-white"
+              >
+                <span>Invoices</span>
+                <ExternalLink className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
